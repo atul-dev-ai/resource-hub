@@ -52,6 +52,14 @@ A modern, community-driven web platform designed for university students to easi
 4. **Open the App**
    Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
+## License & Usage
+
+This project is open-source under the MIT License.
+
+You are free to use and contribute, but you must give proper credit to the original author.
+
+Re-uploading, rebranding, or presenting this project as your own work without attribution is strictly prohibited.
+
 ## Contributing 🤝
 
 Contributions, issues, and feature requests are welcome!
