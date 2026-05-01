@@ -1,0 +1,319 @@
+/* ==========================================================
+   CSS — controls how everything LOOKS
+   Colors, sizes, spacing, layout, animations all go here
+   ========================================================== */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* * = applies to EVERY element on the page
+     box-sizing: border-box — makes width/height include padding & border (easier math)
+     margin: 0; padding: 0  — removes the default spacing browsers add on their own */
+
+
+  /* ---- LIGHT MODE COLORS ----
+     :root means "the whole page".
+     We store colors as named variables (--name) here so we only
+     have to change a color in ONE place and it updates everywhere. */
+  :root {
+    --bg-page:        #f3dfa7;  /* warm cream — main page background */
+    --bg-input:       #FFFFFF;  /* white — inside the text boxes */
+    --border-input:   #4A8C72;  /* green — border line around input boxes */
+    --text-primary:   #2C2418;  /* very dark brown — main readable text */
+    --text-secondary: #7A6A56;  /* medium brown — placeholder text, secondary info */
+    --text-label:     #3A6B52;  /* dark green — the small uppercase labels (EMAIL, PASSWORD) */
+    --accent-coral:   #c0694c;  /* reddish-orange — error messages and the forgot link */
+    --logo-1: #4A8C72; --logo-2: #D85A30; --logo-3: #4A8C72; --logo-4: #E8A838; /* logo colors, not used directly in CSS below */
+    --btn-bg:         #3A6B52;  /* dark green — login button background */
+    --btn-text:       #FFFFFF;  /* white — text on the login button */
+    --tab-active-bg:  #3A6B52;  /* green — background of the selected tab */
+    --tab-active-txt: #FFFFFF;  /* white — text on the selected tab */
+    --tab-idle-txt:   #3A6B52;  /* green — text on the unselected tab */
+    --tab-border:     #3A6B52;
+    --toggle-track:   #d3c090;  /* tan — background of the pill-shaped toggle */
+    --toggle-thumb:   #3A6B52;  /* green — the active dot inside the toggle */
+    --error-bg:       #FDECEA;  /* light pink — background behind error text */
+    --header-bg:      #ecd096;  /* light gold — the top header bar */
+    --input-shadow:   rgba(74,140,114,0.15); /* soft green shadow for depth */
+  }
+
+  /* ---- DARK MODE COLORS ----
+     When JS sets data-theme="dark" on the <html> tag,
+     these values automatically REPLACE the ones above.
+     Every place that uses var(--bg-page) etc will update instantly. */
+  [data-theme="dark"] {
+    --bg-page:        #36312a;  /* dark warm brown — page background */
+    --bg-input:       #2A2318;  /* darker brown — inside text boxes */
+    --border-input:   #5DCAA5;  /* teal — input borders */
+    --text-primary:   #F0E8D5;  /* light cream — main text */
+    --text-secondary: #A89880;  /* muted tan — placeholder / secondary text */
+    --text-label:     #5DCAA5;  /* teal — field labels */
+    --accent-coral:   #F0997B;  /* soft orange — errors + forgot link */
+    --logo-1: #5DCAA5; --logo-2: #F0997B; --logo-3: #5DCAA5; --logo-4: #FAC775;
+    --btn-bg:         #5DCAA5;  /* teal — login button */
+    --btn-text:       #1C1812;  /* near-black — text on the teal button */
+    --tab-active-bg:  #5DCAA5;
+    --tab-active-txt: #1C1812;
+    --tab-idle-txt:   #5DCAA5;
+    --tab-border:     #5DCAA5;
+    --toggle-track:   #4c4436;  /* dark brown — toggle background */
+    --toggle-thumb:   #5DCAA5;  /* teal — active dot */
+    --error-bg:       #2A1A14;  /* dark red-brown — error background */
+    --header-bg:      #24221e;  /* near-black — header bar */
+    --input-shadow:   rgba(93,202,165,0.1);
+  }
+
+
+  /* ---- BODY ----
+     The full browser window. Sets the background and default font. */
+  body {
+    background: var(--bg-page);           /* uses the color variable from :root above */
+    color: var(--text-primary);           /* default text color for the whole page */
+    font-family: 'Nunito', sans-serif;    /* use the Google Font we loaded above */
+    font-weight: 600;                     /* slightly bold by default */
+    min-height: 100vh;                    /* 100vh = full visible screen height */
+    transition: background 0.3s, color 0.3s; /* smoothly fade colors when switching theme */
+  }
+
+
+  /* ---- HEADER / TOP BAR ----
+     The strip at the top with the logo and theme toggle */
+  header {
+    position: fixed;          /* stays at the top even when you scroll */
+    top: 0; left: 0; right: 0; /* stretch across the full width */
+    z-index: 100;             /* stay on top of all other content (100 = very high) */
+    background: var(--header-bg);
+    display: flex;            /* puts children side by side */
+    align-items: center;      /* vertically center the logo and toggle */
+    justify-content: space-between; /* logo on left, toggle on right */
+    padding: 0 28px;          /* breathing room on left and right */
+    height: 60px;
+    transition: background 0.9s; /* slow fade when changing theme */
+  }
+
+  /* Left side of the header: hamburger icon + logo */
+  .header-left { display: flex; align-items: center; gap: 14px; } /* 14px gap between hamburger and logo */
+
+  /* Hamburger menu icon */
+  .hamburger { cursor: pointer; display: flex; align-items: center; } /* cursor: pointer = hand on hover */
+  .hamburger img { height: 28px; width: auto; object-fit: contain; } /* fixed height, auto width */
+
+  /* Logo image */
+  .logo img { height: 36px; width: auto; object-fit: contain; }
+
+  /* Right side of the header: theme toggle */
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+
+  /* ---- THEME TOGGLE (sun/moon pill button) ---- */
+  .theme-toggle {
+    display: flex; align-items: center;
+    background: var(--toggle-track);  /* tan/dark pill background */
+    border-radius: 20px;              /* makes it a rounded pill shape */
+    padding: 3px;                     /* small padding around the icons inside */
+    cursor: pointer; gap: 2px;
+    transition: background 0.3s;
+    border: none; outline: none;      /* remove default button border and focus ring */
+  }
+
+  /* Each icon (sun or moon) sits in a circle */
+  .theme-toggle .icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;               /* 50% = perfect circle */
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.3s;
+  }
+  .theme-toggle .icon img { width: 24px; height: 24px; object-fit: contain; }
+  .theme-toggle .icon.active { background: var(--toggle-thumb); } /* .active = this icon is selected, show the colored circle */
+
+
+  /* ---- TABS (Login / Signup switcher) ---- */
+  .tabs-wrap {
+    display: flex; justify-content: center; /* center the tab group horizontally */
+    margin-top: 18px;
+  }
+  .tabs {
+    display: inline-flex; align-items: center; /* shrink-wrap around the two tab buttons */
+    background: var(--toggle-track);           /* same pill style as the theme toggle */
+    border-radius: 20px; padding: 3px;
+    gap: 2px;
+    transition: background 0.3s;
+    border: none;
+  }
+
+  /* Each individual tab button */
+  .tab {
+    height: 28px; padding: 0 18px;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Nunito', sans-serif;
+    cursor: pointer; border: none;
+    background: transparent;          /* no background when not selected */
+    color: var(--text-secondary);     /* grey-ish text when not selected */
+    transition: all 0.2s;
+    border-radius: 14px; display: flex; align-items: center;
+  }
+
+  /* The selected/active tab gets a colored background */
+  .tab.active {
+    background: var(--toggle-thumb);  /* filled circle */
+    color: var(--tab-active-txt);     /* white text on the filled tab */
+    border-radius: 16px;
+  }
+
+
+  /* ---- MAIN LAYOUT ----
+     Centers the content vertically and horizontally in the window */
+  main {
+    min-height: 100vh;                /* fills the full window height */
+    display: flex; align-items: center; justify-content: center;
+    padding: 80px 24px 24px;          /* top padding = 80px to clear the fixed header */
+  }
+
+  /* The row that holds the form on the left and mochi on the right */
+  .page-content {
+    display: flex; align-items: flex-start; justify-content: center;
+    gap: 20px;                        /* 20px gap between the form and the character */
+    width: 100%; max-width: 960px;    /* never wider than 960px */
+  }
+
+
+  /* ---- SLOGAN IMAGE ---- */
+  .slogan {
+    display: flex; justify-content: center; /* center the slogan image */
+    margin-bottom: 10px;
+  }
+  .slogan img { max-width: 100%; height: auto; } /* never overflow its container, scale height automatically */
+
+
+  /* ---- FORM COLUMN (left side) ---- */
+  .form-col { flex: 1; max-width: 400px; } /* grows to fill space but never wider than 400px */
+  .form-group { margin-bottom: 12px; }     /* space between each field */
+
+  /* Small uppercase label above each input (EMAIL, PASSWORD) */
+  .form-label {
+    display: block;                   /* sits on its own line above the input */
+    font-size: 13px; font-weight: 600;
+    font-family: 'Nunito', sans-serif;
+    letter-spacing: 0.8px;           /* spread letters out slightly */
+    color: var(--text-label);
+    margin-bottom: 4px;
+    margin-left: 14px;                /* indent to align with text inside the pill input */
+    text-transform: uppercase;        /* automatically makes the text uppercase */
+    transition: color 0.3s;
+  }
+
+  /* The actual text input boxes */
+  .form-input {
+    width: 100%;
+    padding: 13px 20px;               /* comfortable inside spacing */
+    border: 1.5px solid var(--border-input);
+    border-radius: 50px;              /* very large radius = full pill shape */
+    font-size: 16px; font-weight: 600;
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;                    /* remove default browser blue focus ring */
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px var(--input-shadow); /* subtle shadow for depth */
+  }
+
+  /* Styles applied when the user clicks into an input (it becomes "focused") */
+  .form-input:focus {
+    box-shadow: 0 0 0 3px var(--input-shadow), 0 2px 8px var(--input-shadow); /* stronger glow */
+    border-color: var(--text-label);  /* slightly darker border when active */
+  }
+
+  /* The faint hint text shown inside an empty input */
+  .form-input::placeholder { color: var(--text-secondary); }
+
+
+  /* ---- FORGOT PASSWORD LINK ---- */
+  .forgot {
+    display: block;
+    text-align: right;                /* push the link to the right side */
+    font-size: 15px; font-weight: 600; font-family: 'Nunito', sans-serif;
+    color: var(--accent-coral);       /* reddish-orange to stand out */
+    text-decoration: none;            /* remove default underline on links */
+    margin-top: 6px;
+    transition: opacity 0.2s;
+  }
+  .forgot:hover { opacity: 0.75; }   /* slightly fade on hover to show it's clickable */
+
+
+  /* ---- LOGIN BUTTON ---- */
+  .btn-login {
+    width: 100%;                      /* stretch across the full form width */
+    margin-top: 28px; padding: 14px;
+    border-radius: 50px;              /* pill shape */
+    border: none; cursor: pointer;
+    background: var(--btn-bg);        /* green / teal */
+    color: var(--btn-text);           /* white text */
+    font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 600;
+    transition: all 0.2s; letter-spacing: 0.3px;
+  }
+  .btn-login:hover  { opacity: 0.88; transform: translateY(-1px); } /* lift slightly on hover */
+  .btn-login:active { transform: scale(0.98); }                      /* press-down on click */
+
+
+  /* ---- ERROR MESSAGE ----
+     Hidden by default — only shown when the password is wrong */
+  .error-msg {
+    display: none;                    /* invisible by default */
+    margin-top: 14px; padding: 6px 16px;
+    color: var(--accent-coral);       /* reddish-orange text */
+    font-size: 13px; text-align: center;
+  }
+  .error-msg.visible { display: block; } /* JS adds .visible to show this */
+
+
+  /* ---- SHAKE ANIMATION ----
+     A quick side-to-side wiggle — plays when wrong password is entered */
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }   /* start and end in place */
+    15% { transform: translateX(-8px); }    /* lurch left */
+    30% { transform: translateX(8px); }     /* lurch right */
+    45% { transform: translateX(-6px); }    /* smaller left */
+    60% { transform: translateX(6px); }     /* smaller right */
+    75% { transform: translateX(-3px); }    /* almost done */
+    90% { transform: translateX(3px); }
+  }
+  /* Adding class .shake to any element plays the animation once */
+  .shake { animation: shake 0.5s ease; }
+
+
+  /* ---- MOCHI CHARACTER COLUMN (right side) ---- */
+  .char-col {
+    flex: 0 0 auto;                   /* don't grow or shrink — stay at its natural size */
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+
+  /* The box that holds all three mochi image layers stacked on top of each other */
+  .char-wrap {
+    position: relative;               /* needed so child images can use position: absolute */
+    width: 520px; height: 610px;
+    user-select: none;                /* stops the user accidentally "selecting" the image */
+    pointer-events: auto; cursor: pointer;
+  }
+
+  /* All three images fill the same box, perfectly overlapping */
+  .char-wrap img {
+    position: absolute;               /* each image is stacked in the same spot */
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;              /* scale without cropping or stretching */
+  }
+
+  #img-base { z-index: 1; }                               /* bottom layer — static body, always visible */
+  #img-eyes { z-index: 2; transition: transform 0.05s linear; } /* middle layer — JS moves this with the cursor */
+  #img-expr { z-index: 3; opacity: 0; }                   /* top layer — invisible by default */
+  #img-expr.visible { opacity: 1; }                       /* JS adds .visible to show an expression */
+
+
+  /* ---- RESPONSIVE / MOBILE LAYOUT ----
+     When the screen is 680px wide or narrower, switch to a stacked layout */
+  @media (max-width: 680px) {
+    .page-content { flex-direction: column; gap: 0; } /* stack form and character vertically */
+    .char-col { order: -1; width: 100%; justify-content: center; } /* move character above the form and center it */
+    .char-wrap { width: 220px; height: 272px; }        /* shrink mochi on small screens */
+    .form-col { max-width: 100%; }                     /* let the form use full width */
+    header { padding: 0 16px; }
+    .tab { padding: 6px 14px; font-size: 13px; }
+  }

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- Tells the browser this is a modern HTML5 page -->
+
+<html lang="en" data-theme="light">
+<!-- lang="en" = page is in English -->
+<!-- data-theme="light" is our own custom attribute — JS will change it to "dark" when needed -->
+
+<head>
+<!-- Everything in <head> is setup info. It doesn't show on the page visually -->
+
+<meta charset="UTF-8">
+<!-- Makes sure letters, emoji, and special characters display correctly -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Tells phones not to zoom out — show the page at its real size -->
+
+<title>Mochi — Login</title>
+<!-- Text shown in the browser tab -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- Connects to Google Fonts early so the font loads faster -->
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Downloads the Nunito font (the round friendly font used everywhere on the page) -->
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<!-- ==========================================================
+     HTML — the actual content shown on the page
+     Think of it as the skeleton. CSS above dresses it up.
+     ========================================================== -->
+
+<!-- TOP HEADER BAR — logo on left, dark mode toggle on right -->
+<header>
+  <div class="header-left">
+    <span class="hamburger"><img src="menu.png" alt="Menu"></span>  <!-- hamburger / menu icon -->
+    <div class="logo">
+      <img src="Logo.png" alt="Mochi">  <!-- mochi logo -->
+    </div>
+  </div>
+  <div class="header-right">
+    <!-- Theme toggle button — clicking it switches between light and dark mode -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+      <span class="icon active" id="sunIcon"><img src="SunToggle.png" alt="Light"></span>  <!-- sun = light mode -->
+      <span class="icon" id="moonIcon"><img src="MoonToggle.png" alt="Dark"></span>        <!-- moon = dark mode -->
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="page-content">
+
+    <!-- LEFT COLUMN — the login form -->
+    <div class="form-col">
+
+      <!-- Slogan image (decorative title above the form) -->
+      <div class="slogan"><img src="slogan.png" alt="Slogan"></div>
+
+      <!-- Email field -->
+      <div class="form-group">
+        <label class="form-label" for="emailInput">Email</label>
+        <!-- for="emailInput" links this label to the input — clicking the label focuses the input -->
+        <input class="form-input" id="emailInput" type="email" placeholder="Sarah.example@gmail.com" autocomplete="off">
+        <!-- type="email" — browser checks it looks like an email address -->
+        <!-- autocomplete="off" — don't suggest saved emails -->
+      </div>
+
+      <!-- Password field -->
+      <div class="form-group">
+        <label class="form-label" for="passwordInput">Password</label>
+        <input class="form-input" id="passwordInput" type="password" placeholder="••••••••••">
+        <!-- type="password" — automatically hides characters as dots -->
+        <a class="forgot" href="#">forgot password?</a>  <!-- href="#" = links nowhere for now -->
+      </div>
+
+      <!-- Login button -->
+      <button class="btn-login" id="loginBtn">Login</button>
+
+      <!-- Error message — hidden by default, shown when password is wrong -->
+      <div class="error-msg" id="errorMsg">Incorrect password. Please try again.</div>
+
+      <!-- Login / Signup tab switcher (below the button) -->
+      <div class="tabs-wrap">
+        <div class="tabs">
+          <button class="tab active" id="tabLogin">Login</button>   <!-- .active = currently selected -->
+          <button class="tab" id="tabSignup">Signup</button>
+        </div>
+      </div>
+
+    </div><!-- end .form-col -->
+
+    <!-- RIGHT COLUMN — the mochi character -->
+    <div class="char-col">
+      <div class="char-wrap" id="charWrap">
+        <!-- Three images stacked in exactly the same position -->
+        <img id="img-base" src="original.png" alt="character"> <!-- Layer 1: body, never changes -->
+        <img id="img-eyes" src="eyes.png" alt="">               <!-- Layer 2: eyes, JS moves these with cursor -->
+        <img id="img-expr" src="" alt="">                       <!-- Layer 3: expression overlay, hidden until needed -->
+      </div>
+    </div><!-- end .char-col -->
+
+  </div>
+</main>
+
+
+<!-- ==========================================================
+     JAVASCRIPT — makes everything interactive
+     Responds to mouse, keyboard, clicks, and timers
+     ========================================================== -->
+<script src="brain.js"></script>
+</body>
+</html>
