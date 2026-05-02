@@ -1,6 +1,6 @@
 ![Varsity Resource Hub Banner](./og-image.jpg)
 <div align="center">
-<h1><b>Varsity Resource Hub 🎓</b> </h1> 
+<h1><b>Resource Hub 🎓</b> </h1> 
 </div>
 A modern, community-driven web platform designed for university students to easily share and access past exam questions, assignments, and study materials. Built with a focus on premium UI/UX, fast performance, and seamless navigation.
 
