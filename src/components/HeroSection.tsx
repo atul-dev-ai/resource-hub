@@ -47,7 +47,7 @@ export default function Hero() {
       {/* Background Image & Dark Green Overlay Section */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/banner.jpg"
+          src="/banner-2.jpg"
           alt="Varsity Resource Hub Background"
           fill
           priority
