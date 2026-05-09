@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   description: "A centralized platform for university students to share, find, and organize past exam questions, assignments, and study materials.",
   openGraph: {
     title: "Varsity Resource Hub | Academic Archive",
-    description: "Access a community-driven database of past exam questions, notes, and study materials to ace your university courses. Knowledge shared is knowledge multiplied.",
-    url: "/",
+    description: "Access a community-driven database of past exam questions, notes, and study materials to ace your university courses.",
+    url: "https://resource-hub-diu.vercel.app",
     siteName: "Varsity Resource Hub",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "https://resource-hub-diu.vercel.app/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Varsity Resource Hub Preview",
@@ -38,14 +38,13 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Varsity Resource Hub | Academic Archive",
     description: "Share Exam Questions & Help Others Succeed. Join the community database of academic resources.",
-    images: ["/og-image.jpg"],
+    images: ["https://resource-hub-diu.vercel.app/og-image.jpg"], 
   },
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",
   },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
