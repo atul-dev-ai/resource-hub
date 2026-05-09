@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://resource-hub-diu.vercel.app"),
   title: "Varsity Resource Hub | Community Driven Academic Archive",
   description: "A centralized platform for university students to share, find, and organize past exam questions, assignments, and study materials.",
+
+  verification: {
+    google: "vBOhE-VuhIiXVbQ0jiPyPPH6Cou-K6rHEa0-1a0np0w",  
+  },
+
   openGraph: {
     title: "Varsity Resource Hub | Academic Archive",
     description: "Access a community-driven database of past exam questions, notes, and study materials to ace your university courses.",
@@ -25,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "Varsity Resource Hub",
     images: [
       {
-        url: "https://resource-hub-diu.vercel.app/og-image.jpg",
+        url: "https://resource-hub-diu.vercel.app/og-image.jpg?v=2",
         width: 1200,
         height: 630,
         alt: "Varsity Resource Hub Preview",
@@ -38,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Varsity Resource Hub | Academic Archive",
     description: "Share Exam Questions & Help Others Succeed. Join the community database of academic resources.",
-    images: ["https://resource-hub-diu.vercel.app/og-image.jpg"], 
+    images: ["https://resource-hub-diu.vercel.app/og-image.jpg?v=2"], 
   },
   icons: {
     icon: "/icon.png",
