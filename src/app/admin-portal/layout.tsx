@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-// FIX: Added 'moderator' to the Settings menu roles
 const allAdminMenuItems = [
   { name: "Dashboard", path: "/admin-portal", icon: LayoutDashboard, roles: ["super_admin", "admin", "moderator"] },
   { name: "Pending Uploads", path: "/admin-portal/pending", icon: FileCheck, roles: ["super_admin", "admin", "moderator"] },
@@ -23,7 +22,7 @@ const allAdminMenuItems = [
   { name: "Departments & Courses", path: "/admin-portal/departments", icon: Layers, roles: ["super_admin", "admin"] },
   { name: "Announcements", path: "/admin-portal/announcements", icon: Megaphone, roles: ["super_admin", "admin"] },
   { name: "Activity Logs", path: "/admin-portal/logs", icon: Activity, roles: ["super_admin", "admin"] },
-  { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin", "moderator"] }, // Added moderator here
+  { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin", "moderator"] },
 ];
 
 const superAdminOnlyItems = [
@@ -52,7 +51,6 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
           .eq("id", user.id)
           .single();
 
-        // Block normal students
         if (!data || !['super_admin', 'admin', 'moderator'].includes(data.role)) {
           router.push("/student-portal");
           return;
@@ -72,36 +70,57 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
   if (!userProfile) return <div className="flex h-screen items-center justify-center bg-gray-50">Loading Secure Portal...</div>;
 
-  // Filter Menus based on Role
   const filteredMenu = allAdminMenuItems.filter(item => item.roles.includes(userProfile.role));
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
       <Toaster position="top-right" />
 
+      {/* ================= MOBILE OVERLAY ================= */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* ================= GREEN SIDEBAR ================= */}
       <aside
-        className={`hidden lg:flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-all duration-200 z-40 ${isMinimized ? "w-20" : "w-64"
-          } shrink-0 shadow-2xl`}
+        className={`fixed lg:relative inset-y-0 left-0 flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-transform duration-300 ease-in-out z-50 lg:z-40 ${
+          isMinimized ? "lg:w-20 w-64" : "w-64"
+        } ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } shrink-0 shadow-2xl overflow-hidden`}
       >
-        <div className="h-16 flex items-center justify-center px-4 border-b border-emerald-800 shrink-0 bg-[#022c22]">
-          <Link href="/admin-portal" className="text-xl font-black text-white tracking-wide cursor-pointer flex items-center gap-2">
-            <ShieldCheck className="text-emerald-400" size={24} />
-            {!isMinimized && <>CONTROL<span className="text-emerald-500">CENTER</span></>}
+        {/* Sidebar Header (Fixed Overflow Issue) */}
+        <div className="h-16 flex items-center justify-between lg:justify-center px-4 border-b border-emerald-800 shrink-0 bg-[#022c22]">
+          <Link href="/admin-portal" className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
+            <ShieldCheck className="text-emerald-400 shrink-0" size={24} />
+            {(!isMinimized || isMobileMenuOpen) && (
+              <span className="text-[17px] font-black text-white tracking-wider truncate">
+                CONTROL<span className="text-emerald-500">CENTER</span>
+              </span>
+            )}
           </Link>
+          
+          {/* Mobile Close Button */}
+          <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-emerald-400 hover:text-white p-1 shrink-0">
+            <X size={24} />
+          </button>
         </div>
 
+        {/* Sidebar Menu Items */}
         <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar overflow-x-hidden">
-          <p className={`px-3 text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3 ${isMinimized ? "hidden" : "block"}`}>Main Navigation</p>
+          <p className={`px-3 text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3 ${isMinimized && !isMobileMenuOpen ? "hidden" : "block"}`}>Main Navigation</p>
 
           {filteredMenu.map((item) => {
             const isActive = pathname === item.path;
             return (
-              <Link key={item.name} href={item.path} title={isMinimized ? item.name : ""}>
-                <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-emerald-600 text-white font-bold" : "hover:bg-emerald-800 hover:text-white font-medium"
+              <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)} title={isMinimized ? item.name : ""}>
+                <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-emerald-600 text-white font-bold" : "hover:bg-emerald-800 hover:text-white font-medium"
                   }`}>
-                  <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-300"}`} />
-                  {!isMinimized && <span className="text-sm whitespace-nowrap">{item.name}</span>}
+                  <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-300 shrink-0"}`} />
+                  {(!isMinimized || isMobileMenuOpen) && <span className="text-sm whitespace-nowrap">{item.name}</span>}
                 </div>
               </Link>
             );
@@ -109,15 +128,15 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
           {userProfile.role === 'super_admin' && (
             <div className="pt-6">
-              <p className={`px-3 text-[10px] font-bold text-red-400/80 uppercase tracking-widest mb-3 ${isMinimized ? "hidden" : "block"}`}>Super Admin Actions</p>
+              <p className={`px-3 text-[10px] font-bold text-red-400/80 uppercase tracking-widest mb-3 ${isMinimized && !isMobileMenuOpen ? "hidden" : "block"}`}>Super Admin Actions</p>
               {superAdminOnlyItems.map((item) => {
                 const isActive = pathname === item.path;
                 return (
-                  <Link key={item.name} href={item.path} title={isMinimized ? item.name : ""}>
-                    <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-red-900/50 text-red-200 border border-red-800/50" : "hover:bg-red-900/30 hover:text-red-300"
+                  <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)} title={isMinimized ? item.name : ""}>
+                    <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-red-900/50 text-red-200 border border-red-800/50" : "hover:bg-red-900/30 hover:text-red-300"
                       }`}>
-                      <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-red-400" : "text-red-500/70 group-hover:text-red-400"}`} />
-                      {!isMinimized && <span className="text-sm whitespace-nowrap font-medium">{item.name}</span>}
+                      <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-red-400" : "text-red-500/70 group-hover:text-red-400 shrink-0"}`} />
+                      {(!isMinimized || isMobileMenuOpen) && <span className="text-sm whitespace-nowrap font-medium">{item.name}</span>}
                     </div>
                   </Link>
                 );
@@ -126,7 +145,8 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
           )}
         </div>
 
-        <div className="p-3 border-t border-emerald-800 shrink-0 bg-[#022c22]">
+        {/* Desktop Collapse Button */}
+        <div className="hidden lg:block p-3 border-t border-emerald-800 shrink-0 bg-[#022c22]">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             className="w-full flex items-center justify-center py-2.5 bg-emerald-900/50 text-emerald-300 rounded-lg hover:bg-emerald-800 hover:text-white transition-colors cursor-pointer"
@@ -143,9 +163,15 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
         
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30 shrink-0 shadow-sm relative">
           <div className="flex items-center gap-4">
-            <button className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden cursor-pointer">
+            
+            {/* Mobile Hamburger Button */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden cursor-pointer"
+            >
               <Menu size={24} />
             </button>
+            
             <div className="hidden sm:flex items-center gap-2">
               <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-200">
                 {userProfile.role.replace('_', ' ')}
@@ -177,7 +203,6 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                   <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsProfileOpen(false)}></div>
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
                     
-                    {/* FIX: Added Settings Link to the dropdown */}
                     <Link href="/admin-portal/settings" onClick={() => setIsProfileOpen(false)}>
                       <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
                         <UserCircle size={18} className="text-slate-400" /> Profile Settings

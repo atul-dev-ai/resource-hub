@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description: "A centralized platform for university students to share, find, and organize past exam questions, assignments, and study materials.",
 
   verification: {
-    google: "vBOhE-VuhIiXVbQ0jiPyPPH6Cou-K6rHEa0-1a0np0w",  
+    google: "vBOhE-VuhIiXVbQ0jiPyPPH6Cou-K6rHEa0-1a0np0w",
   },
 
   openGraph: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     siteName: "Varsity Resource Hub",
     images: [
       {
-        url: "https://resource-hub-diu.vercel.app/og-image.jpg?v=2",
+        url: "https://resource-hub-diu.vercel.app/social-banner.jpg",
         width: 1200,
         height: 630,
         alt: "Varsity Resource Hub Preview",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Varsity Resource Hub | Academic Archive",
     description: "Share Exam Questions & Help Others Succeed. Join the community database of academic resources.",
-    images: ["https://resource-hub-diu.vercel.app/og-image.jpg?v=2"], 
+    images: ["https://resource-hub-diu.vercel.app/social-banner.jpg"],
   },
   icons: {
     icon: "/icon.png",

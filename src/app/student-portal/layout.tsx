@@ -19,9 +19,6 @@ const menuItems = [
   { name: "Upload", path: "/student-portal/upload", icon: UploadCloud },
   { name: "My Uploads", path: "/student-portal/my-uploads", icon: Folder },
   { name: "Reports", path: "/student-portal/reports", icon: AlertTriangle},
-  // { name: "Departments", path: "/student-portal/departments", icon: Layers },
-  // { name: "Bookmarks", path: "/student-portal/bookmarks", icon: Bookmark },
-  // { name: "Notifications", path: "/student-portal/notifications", icon: Bell },
 ];
 
 const bottomMenuItems = [
@@ -32,7 +29,7 @@ const bottomMenuItems = [
 export default function StudentPortalLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // Dropdown State
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
   
   const pathname = usePathname();
@@ -58,17 +55,18 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
   // Logout Handler
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login"); // Logout hoye login page e jabe
+    router.push("/login");
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
       <Toaster position="top-right" />
 
       {/* ================= LEFT SIDEBAR (DESKTOP) ================= */}
+      {/* FIX: Added z-20 and relative positioning to properly layer the sidebar */}
       <aside 
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 h-full transition-all duration-300 ${
-          isMinimized ? "w-20" : "w-64" /* Width komiye w-64 kora hoyeche */
+        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 h-full transition-all duration-300 relative z-20 ${
+          isMinimized ? "w-20" : "w-64"
         }`}
       >
         {/* Logo */}
@@ -92,7 +90,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                 <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg mb-1 transition-colors cursor-pointer group ${
                   isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"}`} />
+                  <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600 shrink-0"}`} />
                   {!isMinimized && <span className="font-medium text-sm whitespace-nowrap">{item.name}</span>}
                 </div>
               </Link>
@@ -110,7 +108,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                   <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg mb-1 transition-colors cursor-pointer group ${
                     isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}>
-                    <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"}`} />
+                    <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600 shrink-0"}`} />
                     {!isMinimized && <span className="font-medium text-sm whitespace-nowrap">{item.name}</span>}
                   </div>
                 </Link>
@@ -145,7 +143,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden cursor-pointer"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden cursor-pointer"
             />
             
             <motion.aside
@@ -166,7 +164,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                     <div className={`flex items-center px-3 py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
                       pathname === item.path ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-100 font-medium"
                     }`}>
-                      <item.icon className="w-5 h-5 mr-3" />
+                      <item.icon className="w-5 h-5 mr-3 shrink-0" />
                       {item.name}
                     </div>
                   </Link>
@@ -179,7 +177,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                       <div className={`flex items-center px-3 py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
                         pathname === item.path ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-100 font-medium"
                       }`}>
-                        <item.icon className="w-5 h-5 mr-3" />
+                        <item.icon className="w-5 h-5 mr-3 shrink-0" />
                         {item.name}
                       </div>
                     </Link>
@@ -195,7 +193,8 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         
         {/* TOPBAR */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 shrink-0">
+        {/* FIX: Changed z-10 to z-30 and added relative positioning */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 shrink-0 relative">
           <div className="flex items-center flex-1 gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -286,7 +285,8 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8 relative z-0">
+        {/* FIX: Removed relative and z-0 classes so modals inside children can cover the entire screen */}
+        <main className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
         
