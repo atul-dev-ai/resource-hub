@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Lock, Mail, ShieldCheck, Save, 
   Loader2, KeyRound, ArrowRight, CheckCircle2,
-  Building2, BookOpen, CalendarDays
+  Building2, BookOpen, Hash
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
@@ -17,7 +17,7 @@ export default function AdminSettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1); 
 
-  // Form States
+  // Form States (Updated to match Profile Schema)
   const [profile, setProfile] = useState({ 
     id: "", 
     full_name: "", 
@@ -25,7 +25,7 @@ export default function AdminSettingsPage() {
     role: "",
     department: "",
     semester: "",
-    session_year: ""
+    batch_initial: "" // Changed from session_year to batch_initial
   });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +52,7 @@ export default function AdminSettingsPage() {
             role: data.role || "",
             department: data.department || "",
             semester: data.semester || "",
-            session_year: data.session_year || ""
+            batch_initial: data.batch_initial || "" // Updated mapped field
           });
         }
       }
@@ -74,7 +74,7 @@ export default function AdminSettingsPage() {
         full_name: profile.full_name,
         department: profile.department,
         semester: profile.semester,
-        session_year: profile.session_year
+        batch_initial: profile.batch_initial // Updated query field
       }).eq("id", profile.id);
       
       if (error) throw error;
@@ -183,12 +183,12 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Session Year */}
+            {/* Batch Initial */}
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><CalendarDays size={14}/> Session / Year</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Hash size={14}/> Batch Initial</label>
               <input 
-                type="text" placeholder="e.g., Spring 2026"
-                value={profile.session_year} onChange={e => setProfile({...profile, session_year: e.target.value})}
+                type="text" placeholder="e.g., 251"
+                value={profile.batch_initial} onChange={e => setProfile({...profile, batch_initial: e.target.value})}
                 className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-slate-700"
               />
             </div>

@@ -18,7 +18,7 @@ export default function UploadClient() {
   const [dbDepartments, setDbDepartments] = useState<any[]>([]);
   const [dbSemesters, setDbSemesters] = useState<any[]>([]);
   const [dbSessions, setDbSessions] = useState<any[]>([]);
-  const [dbCourses, setDbCourses] = useState<any[]>([]); // New: Courses for Autocomplete
+  const [dbCourses, setDbCourses] = useState<any[]>([]);
 
   // File & Form States
   const [files, setFiles] = useState<File[]>([]);
@@ -40,7 +40,6 @@ export default function UploadClient() {
     consent: false
   });
 
-  // Static Dropdown Options
   const resourceTypes = ["Previous Question", "Quiz", "Assignment", "Notes", "Lab Report", "Slide", "Others"];
   const examTypes = ["Mid", "Final", "Quiz", "Viva"];
 
@@ -51,17 +50,26 @@ export default function UploadClient() {
   const fetchAcademicData = async () => {
     setLoadingData(true);
     try {
-      const [deptRes, semRes, sessionRes, courseRes] = await Promise.all([
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication error");
+
+      const [deptRes, semRes, sessionRes, courseRes, profileRes] = await Promise.all([
         supabase.from("departments").select("code, name").order("code"),
         supabase.from("semesters").select("id, name").order("created_at"),
-        supabase.from("academic_sessions").select("id, term, year, batch_code").eq("is_active", true).order("year", { ascending: false }),
-        supabase.from("courses").select("*") // Fetch all courses for autocomplete
+        supabase.from("academic_sessions").select("id, term, year, batch_code").eq("is_active", true).order("batch_code", { ascending: false }),
+        supabase.from("courses").select("*"),
+        supabase.from("profiles").select("department").eq("id", user.id).single()
       ]);
 
       setDbDepartments(deptRes.data || []);
       setDbSemesters(semRes.data || []);
       setDbSessions(sessionRes.data || []);
       setDbCourses(courseRes.data || []);
+
+      if (profileRes.data?.department) {
+        setFormData(prev => ({ ...prev, department: profileRes.data.department }));
+      }
+
     } catch (error) {
       toast.error("Failed to load academic data. Please refresh.");
     } finally {
@@ -69,18 +77,15 @@ export default function UploadClient() {
     }
   };
 
-  // Auto-fill Course Name if Code matches
   const handleCourseCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const code = e.target.value.toUpperCase();
     setFormData(prev => ({ ...prev, courseCode: code }));
     
-    // Find matching course from DB
     const existingCourse = dbCourses.find(c => c.course_code.toUpperCase() === code);
     if (existingCourse && !formData.courseName) {
       setFormData(prev => ({ 
         ...prev, 
         courseName: existingCourse.course_name,
-        department: existingCourse.department_code || prev.department,
         semester: existingCourse.semester || prev.semester
       }));
     }
@@ -120,8 +125,8 @@ export default function UploadClient() {
     
     if (!formData.consent) return toast.error("You must agree to the consent checkbox.");
     if (files.length === 0) return toast.error("Please upload at least one file.");
+    if (!formData.department) return toast.error("Department is missing. Please check your profile.");
     
-    // Rate Limiting (Brute force protection)
     const lastUpload = localStorage.getItem("lastUploadTimestamp");
     const now = Date.now();
     if (lastUpload && now - parseInt(lastUpload) < 30000) {
@@ -131,6 +136,10 @@ export default function UploadClient() {
     setIsSubmitting(true);
     const loadingToast = toast.loading("Uploading resources and saving data...");
 
+    // ট্র্যাকিং অ্যারে: কোনো ফেইলিওর হলে এই ফাইলগুলো বাকেট থেকে ডিলিট করা হবে
+    const uploadedPaths: string[] = [];
+    const uploadedUrls: string[] = [];
+
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Authentication failed! Please log in again.");
@@ -138,7 +147,6 @@ export default function UploadClient() {
       // 1. DYNAMIC COURSE SAVE LOGIC
       const courseExists = dbCourses.find(c => c.course_code.toUpperCase() === formData.courseCode.toUpperCase());
       if (!courseExists) {
-        // If course doesn't exist, insert it into the courses table silently
         const { data: newCourse, error: newCourseError } = await supabase.from("courses").insert([{
           department_code: formData.department,
           semester: formData.semester,
@@ -147,27 +155,29 @@ export default function UploadClient() {
         }]).select().single();
         
         if (!newCourseError && newCourse) {
-           setDbCourses(prev => [...prev, newCourse]); // Update local state
+           setDbCourses(prev => [...prev, newCourse]);
         }
       }
 
       // 2. FILE UPLOAD LOGIC
-      const uploadedUrls: string[] = [];
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const fileName = `${user.id}/${Date.now()}-${cleanName}.${fileExt}`;
+        const filePath = `${user.id}/${Date.now()}-${cleanName}.${fileExt}`; // file path in bucket
         
-        const { error: uploadError } = await supabase.storage.from("academic_resources").upload(fileName, file);
+        const { error: uploadError } = await supabase.storage.from("academic_resources").upload(filePath, file);
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(fileName);
+        // আপলোড সাকসেস হলে পাথটা ট্র্যাকিং অ্যারেতে সেভ করে রাখি
+        uploadedPaths.push(filePath);
+
+        const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(filePath);
         uploadedUrls.push(publicUrl);
       }
 
       const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 
-      // 3. SAVE RESOURCE METADATA
+      // 3. SAVE RESOURCE METADATA (DATABASE)
       const { error: dbError } = await supabase.from("resources").insert([{
         uploader_id: user.id,
         title: formData.title,
@@ -185,26 +195,32 @@ export default function UploadClient() {
         status: 'pending' 
       }]);
 
-      if (dbError) throw dbError;
+      if (dbError) throw dbError; // এটা ফেইল করলে সরাসরি catch ব্লকে চলে যাবে
 
       localStorage.setItem("lastUploadTimestamp", Date.now().toString());
       toast.success("Resource submitted for admin review!", { id: loadingToast, duration: 5000 });
       
       setFiles([]);
-      setFormData({
-        resourceType: "", title: "", description: "", department: "", semester: "", 
+      setFormData(prev => ({
+        resourceType: "", title: "", description: "", department: prev.department, semester: "", 
         courseName: "", courseCode: "", teacherName: "", examType: "", sessionId: "", tags: "", consent: false
-      });
+      }));
 
     } catch (error: any) {
       console.error("Upload Error:", error);
+      
+      // ROLLBACK MECHANISM: যদি ডাটাবেজ এরর দেয়, তবে বাকেট থেকে আপলোড করা ফাইল ডিলিট করে দাও
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from("academic_resources").remove(uploadedPaths);
+        console.log("Rolled back (deleted) files from bucket due to DB error.");
+      }
+
       toast.error(error.message || "Something went wrong during upload", { id: loadingToast });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filter dynamic courses based on selected department for better suggestions
   const filteredCourses = dbCourses.filter(c => c.department_code === formData.department || !formData.department);
 
   return (
@@ -266,8 +282,14 @@ export default function UploadClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Department <span className="text-red-500">*</span></label>
-              <select required value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer text-gray-700">
-                <option value="" disabled>Select Dept</option>
+              <select 
+                required 
+                value={formData.department} 
+                onChange={e => setFormData({...formData, department: e.target.value})} 
+                disabled 
+                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none appearance-none cursor-not-allowed text-gray-500 font-medium"
+              >
+                <option value="" disabled>Loading Dept...</option>
                 {dbDepartments.map(d => <option key={d.code} value={d.code}>{d.code} - {d.name}</option>)}
               </select>
             </div>
@@ -280,7 +302,6 @@ export default function UploadClient() {
               </select>
             </div>
             
-            {/* Auto-suggest Datalist inputs */}
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Course Code <span className="text-red-500">*</span></label>
               <div className="relative">

@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, Variants } from "framer-motion"; // <-- Variants ইমপোর্ট করা হয়েছে
 import { BookOpenText, UploadCloud, FileText, FileCheck, FileArchive } from "lucide-react";
 
-// Framer Motion Animation Variants
-const containerVariants = {
+// Framer Motion Animation Variants (টাইপ অ্যাড করা হয়েছে)
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -19,12 +19,12 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
 };
 
-const floatingVariants = {
+const floatingVariants: Variants = {
   animate: {
     y: [0, -15, 0],
     transition: {

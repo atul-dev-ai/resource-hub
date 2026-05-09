@@ -27,9 +27,10 @@ export default function AdminReportsPage() {
     const fetchReports = async () => {
         setLoading(true);
         try {
+            // FIX: Added email, department, and student_id to the fetch query
             const { data, error } = await supabase
                 .from("reports")
-                .select("*, profiles(full_name)") // <-- ইমেইল রিমুভ করা হয়েছে
+                .select("*, profiles(full_name, email, department, student_id)") 
                 .order("created_at", { ascending: false });
 
             if (error) {
@@ -84,7 +85,6 @@ export default function AdminReportsPage() {
 
     const getStatusIcon = (status: string) => {
         if (status === 'resolved') return <CheckCircle2 size={16} className="text-emerald-500" />;
-        // স্পিনিং লোডারের বদলে Search আইকন দেওয়া হলো
         if (status === 'investigating') return <Search size={16} className="text-blue-500" />;
         return <Clock size={16} className="text-orange-500" />;
     };
@@ -92,7 +92,7 @@ export default function AdminReportsPage() {
     if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div>
@@ -153,8 +153,8 @@ export default function AdminReportsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="text-slate-700 font-bold">{report.profiles?.full_name}</span>
-                                            <span className="text-[11px] text-slate-400 font-medium">{report.profiles?.email}</span>
+                                            <span className="text-slate-700 font-bold">{report.profiles?.full_name || "Unknown User"}</span>
+                                            <span className="text-[11px] text-slate-400 font-medium">{report.profiles?.email || "No email"}</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -182,7 +182,8 @@ export default function AdminReportsPage() {
             {/* Report Detail Modal */}
             <AnimatePresence>
                 {selectedReport && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+                    /* FIX: z-[9999] added to ensure modal is always on top of navbar and sidebar */
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
                         <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
                             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                                 <div className="flex items-center gap-3">
@@ -208,7 +209,17 @@ export default function AdminReportsPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
                                         <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Reporter</p>
-                                        <p className="text-sm font-bold text-slate-800">{selectedReport.profiles?.full_name}</p>
+                                        <p className="text-sm font-bold text-slate-800">{selectedReport.profiles?.full_name || "Unknown User"}</p>
+                                        
+                                        {/* FIX: Showing Email & Department gracefully */}
+                                        {selectedReport.profiles?.email && (
+                                            <p className="text-[11px] font-medium text-slate-500 mt-0.5">{selectedReport.profiles.email}</p>
+                                        )}
+                                        {selectedReport.profiles?.department && (
+                                            <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 w-fit px-1.5 py-0.5 rounded mt-1 border border-emerald-100">
+                                                {selectedReport.profiles.department}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50/50">
                                         <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Status</p>

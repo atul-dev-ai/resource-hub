@@ -9,11 +9,11 @@ import {
   LayoutDashboard, FileCheck, Database, Users,
   Layers, AlertTriangle, Megaphone, Activity,
   Settings, ShieldCheck, ChevronLeft, ChevronRight,
-  Menu, X, LogOut, ChevronDown, Key
+  Menu, X, LogOut, ChevronDown, Key, UserCircle
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-// All possible menu items mapped with required minimum roles
+// FIX: Added 'moderator' to the Settings menu roles
 const allAdminMenuItems = [
   { name: "Dashboard", path: "/admin-portal", icon: LayoutDashboard, roles: ["super_admin", "admin", "moderator"] },
   { name: "Pending Uploads", path: "/admin-portal/pending", icon: FileCheck, roles: ["super_admin", "admin", "moderator"] },
@@ -23,7 +23,7 @@ const allAdminMenuItems = [
   { name: "Departments & Courses", path: "/admin-portal/departments", icon: Layers, roles: ["super_admin", "admin"] },
   { name: "Announcements", path: "/admin-portal/announcements", icon: Megaphone, roles: ["super_admin", "admin"] },
   { name: "Activity Logs", path: "/admin-portal/logs", icon: Activity, roles: ["super_admin", "admin"] },
-  { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin"] },
+  { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin", "moderator"] }, // Added moderator here
 ];
 
 const superAdminOnlyItems = [
@@ -81,7 +81,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
       {/* ================= GREEN SIDEBAR ================= */}
       <aside
-        className={`hidden lg:flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-all duration-200 ${isMinimized ? "w-20" : "w-64"
+        className={`hidden lg:flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-all duration-200 z-40 ${isMinimized ? "w-20" : "w-64"
           } shrink-0 shadow-2xl`}
       >
         <div className="h-16 flex items-center justify-center px-4 border-b border-emerald-800 shrink-0 bg-[#022c22]">
@@ -140,7 +140,8 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
       {/* ================= MAIN CONTENT AREA ================= */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10 shrink-0 shadow-sm">
+        
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30 shrink-0 shadow-sm relative">
           <div className="flex items-center gap-4">
             <button className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden cursor-pointer">
               <Menu size={24} />
@@ -174,9 +175,19 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
               {isProfileOpen && (
                 <>
                   <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsProfileOpen(false)}></div>
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-1">
-                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left">
-                      <LogOut size={16} /> Secure Logout
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
+                    
+                    {/* FIX: Added Settings Link to the dropdown */}
+                    <Link href="/admin-portal/settings" onClick={() => setIsProfileOpen(false)}>
+                      <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+                        <UserCircle size={18} className="text-slate-400" /> Profile Settings
+                      </div>
+                    </Link>
+                    
+                    <div className="h-px bg-slate-100 my-1"></div>
+
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left">
+                      <LogOut size={18} /> Secure Logout
                     </button>
                   </div>
                 </>
@@ -185,7 +196,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-0">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>

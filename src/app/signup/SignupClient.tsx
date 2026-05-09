@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, ArrowLeft, AlertOctagon, User, Building2, CalendarClock, Eye, EyeOff } from "lucide-react";
+import { 
+  Mail, Lock, ArrowLeft, AlertOctagon, User, 
+  Building2, CalendarClock, Eye, EyeOff, Phone, BookOpen, Hash
+} from "lucide-react";
 import MochiMascot from "@/components/MochiMascot";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
@@ -16,14 +19,18 @@ export default function SignupClient() {
   const [loadingData, setLoadingData] = useState(true);
   const [departments, setDepartments] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [semesters, setSemesters] = useState<any[]>([]);
 
-  // Form State
+  // Form State (Expanded with Phone, Semester, Section)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    phone: "",
     password: "",
     department: "",
-    sessionId: ""
+    sessionId: "",
+    semester: "",
+    section: ""
   });
   
   // Mascot, Validation & Loading State
@@ -46,13 +53,15 @@ export default function SignupClient() {
   const fetchRegistrationData = async () => {
     setLoadingData(true);
     try {
-      const [deptRes, sessionRes] = await Promise.all([
+      const [deptRes, sessionRes, semRes] = await Promise.all([
         supabase.from("departments").select("code, name").order("code"),
-        supabase.from("academic_sessions").select("id, term, year, batch_code").eq("is_active", true).order("year", { ascending: false })
+        supabase.from("academic_sessions").select("id, term, year, batch_code").eq("is_active", true).order("year", { ascending: false }),
+        supabase.from("semesters").select("id, name").order("created_at")
       ]);
 
       setDepartments(deptRes.data || []);
       setSessions(sessionRes.data || []);
+      setSemesters(semRes.data || []);
     } catch (error) {
       toast.error("Failed to load academic data. Please refresh.");
     } finally {
@@ -117,8 +126,8 @@ export default function SignupClient() {
       return;
     }
 
-    if (!formData.department || !formData.sessionId) {
-      setErrorMsg("Please select your Department and Batch.");
+    if (!formData.department || !formData.sessionId || !formData.semester) {
+      setErrorMsg("Please fill out all academic details.");
       setMochiStatus("error");
       triggerShake();
       return;
@@ -139,8 +148,11 @@ export default function SignupClient() {
           emailRedirectTo: `${window.location.origin}/login`,
           data: {
             full_name: formData.fullName,
+            phone: formData.phone,
             department: formData.department,
             session_id: formData.sessionId,
+            semester: formData.semester,
+            section: formData.section.toUpperCase(),
             role: 'student'
           }
         }
@@ -188,49 +200,57 @@ export default function SignupClient() {
             <p className="text-[#A89880] text-sm">Create your secure account to access the portal.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* Full Name */}
-            <div>
-              <label className="block text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Full Name</label>
-              <div className="relative">
-                <User size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
-                <input 
-                  type="text" required
-                  value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})}
-                  placeholder="John Doe" 
-                  disabled={lockoutTimer > 0}
-                  className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3.5 pl-14 pr-4 text-sm md:text-base focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
-                />
+            {/* Personal Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Full Name</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <input 
+                    type="text" required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})}
+                    placeholder="John Doe" disabled={lockoutTimer > 0}
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">University Email</label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <input 
+                    type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
+                    onFocus={() => setMochiStatus("idle")} placeholder="name@diu.edu.bd" disabled={lockoutTimer > 0}
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Phone Number <span className="text-[#A89880] lowercase font-normal">(optional)</span></label>
+                <div className="relative">
+                  <Phone size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <input 
+                    type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
+                    placeholder="+880 1XXX-XXXXXX" disabled={lockoutTimer > 0}
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">University Email</label>
-              <div className="relative">
-                <Mail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
-                <input 
-                  type="email" required
-                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                  onFocus={() => setMochiStatus("idle")}
-                  placeholder="name@diu.edu.bd" 
-                  disabled={lockoutTimer > 0}
-                  className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3.5 pl-14 pr-4 text-sm md:text-base focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
-                />
-              </div>
-            </div>
-
-            {/* Department & Batch Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Academic Info Grid */}
+            <div className="grid grid-cols-2 gap-4 mt-2">
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Department</label>
                 <div className="relative">
-                  <Building2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <Building2 size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
                   <select 
                     required value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})}
                     disabled={loadingData || lockoutTimer > 0}
-                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3.5 pl-10 pr-8 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-10 pr-8 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 appearance-none cursor-pointer disabled:opacity-50"
                   >
                     <option value="">Dept</option>
                     {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
@@ -239,49 +259,72 @@ export default function SignupClient() {
               </div>
 
               <div>
-                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Batch/Session</label>
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Batch</label>
                 <div className="relative">
-                  <CalendarClock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <CalendarClock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
                   <select 
                     required value={formData.sessionId} onChange={e => setFormData({...formData, sessionId: e.target.value})}
                     disabled={loadingData || lockoutTimer > 0}
-                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3.5 pl-10 pr-8 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-10 pr-8 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 appearance-none cursor-pointer disabled:opacity-50"
                   >
                     <option value="">Batch</option>
                     {sessions.map(s => <option key={s.id} value={s.id}>{s.batch_code} ({s.term})</option>)}
                   </select>
                 </div>
               </div>
+
+              <div>
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Semester</label>
+                <div className="relative">
+                  <BookOpen size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <select 
+                    required value={formData.semester} onChange={e => setFormData({...formData, semester: e.target.value})}
+                    disabled={loadingData || lockoutTimer > 0}
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-10 pr-8 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 appearance-none cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="">Select</option>
+                    {semesters.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Section <span className="text-[#A89880] lowercase font-normal">(optional)</span></label>
+                <div className="relative">
+                  <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  <input 
+                    type="text" value={formData.section} onChange={e => setFormData({...formData, section: e.target.value})}
+                    placeholder="e.g. A" disabled={lockoutTimer > 0} maxLength={3}
+                    className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-10 pr-4 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all uppercase shadow-inner disabled:opacity-50"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Password */}
-            <div>
-              <label className="block text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Secure Password</label>
+            <div className="pt-2">
+              <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Secure Password</label>
               <div className="relative">
-                <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
                 <input 
                   type={showPassword ? "text" : "password"} required
                   value={formData.password} onChange={handlePasswordChange}
-                  onFocus={() => setMochiStatus("typing")}
-                  onBlur={() => setMochiStatus("idle")}
-                  placeholder="Minimum 8 characters" 
-                  disabled={lockoutTimer > 0}
-                  className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3.5 pl-14 pr-12 text-sm md:text-base focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
+                  onFocus={() => setMochiStatus("typing")} onBlur={() => setMochiStatus("idle")}
+                  placeholder="Minimum 8 characters" disabled={lockoutTimer > 0}
+                  className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-12 pr-12 text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]/60 hover:text-[#5DCAA5] transition-colors cursor-pointer">
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               
-              {/* Password Strength Indicator */}
-              <div className="flex gap-1 h-1.5 w-full mt-3 px-2">
+              <div className="flex gap-1 h-1.5 w-full mt-2 px-2">
                 {[1, 2, 3, 4].map((level) => (
                   <div key={level} className={`flex-1 rounded-full transition-all duration-300 ${passwordStrength >= level ? (passwordStrength > 2 ? 'bg-[#5DCAA5]' : 'bg-[#F0997B]') : 'bg-[#36312a]'}`}></div>
                 ))}
               </div>
             </div>
 
-            {/* Error Message */}
             {errorMsg && (
               <div className="flex items-center justify-center gap-2 text-center text-[#F0997B] text-sm font-bold bg-[#F0997B]/10 py-3 px-4 rounded-xl border border-[#F0997B]/20">
                 <AlertOctagon size={16} />
@@ -289,11 +332,10 @@ export default function SignupClient() {
               </div>
             )}
 
-            {/* Submit Button */}
             <button 
               type="submit" 
               disabled={isSubmitting || lockoutTimer > 0 || loadingData}
-              className={`w-full font-bold text-lg py-4 mt-2 rounded-full transition-all transform shadow-xl ${
+              className={`w-full font-bold text-base py-3.5 mt-2 rounded-full transition-all transform shadow-xl ${
                 lockoutTimer > 0 
                   ? 'bg-red-900/50 text-red-300 cursor-not-allowed border border-red-500/30'
                   : isSubmitting || loadingData
@@ -306,8 +348,7 @@ export default function SignupClient() {
 
           </form>
 
-          {/* Toggle Button */}
-          <div className="mt-8 text-center flex items-center justify-center gap-2 bg-[#36312a] p-1.5 rounded-full w-fit mx-auto border border-[#5DCAA5]/30">
+          <div className="mt-6 text-center flex items-center justify-center gap-2 bg-[#36312a] p-1.5 rounded-full w-fit mx-auto border border-[#5DCAA5]/30">
             <Link href="/login" className="px-8 py-2 text-sm font-bold text-[#5DCAA5] rounded-full hover:bg-[#5DCAA5]/10 transition-colors cursor-pointer">Login</Link>
             <div className="px-8 py-2 text-sm font-bold bg-[#5DCAA5] text-[#1C1812] rounded-full shadow-md cursor-pointer">Signup</div>
           </div>
