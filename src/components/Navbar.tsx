@@ -72,7 +72,7 @@ export default function Navbar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []); // <--- FIX: Removed [supabase] from dependency array to prevent infinite loop
 
   // Function to determine correct dashboard link based on role
   const getDashboardLink = () => {

@@ -1,11 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, Variants } from "framer-motion"; // <-- Variants ইমপোর্ট করা হয়েছে
+import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { BookOpenText, UploadCloud, FileText, FileCheck, FileArchive } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
-// Framer Motion Animation Variants (টাইপ অ্যাড করা হয়েছে)
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -36,6 +37,67 @@ const floatingVariants: Variants = {
 };
 
 export default function Hero() {
+  // --- Auth States & Logic Start ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setIsLoggedIn(true);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+          
+        if (profile) {
+          setUserRole(profile.role);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserRole(null);
+      }
+    };
+
+    checkUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setIsLoggedIn(true);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+            
+          if (profile) setUserRole(profile.role);
+        } else {
+          setIsLoggedIn(false);
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const getDashboardLink = () => {
+    if (!userRole) return "/login";
+    if (['super_admin', 'admin', 'moderator'].includes(userRole)) {
+      return "/admin-portal";
+    }
+    return "/student-portal";
+  };
+
+  // Scroll Animations
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, -100]);
   const y2 = useTransform(scrollY, [0, 500], [0, -150]);
@@ -43,7 +105,7 @@ export default function Hero() {
 
   return (
     <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
-      
+
       {/* Background Image & Dark Green Overlay Section */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -82,7 +144,7 @@ export default function Hero() {
 
       {/* Main Content (Text & Buttons) */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center mt-12">
-        
+
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -119,21 +181,23 @@ export default function Hero() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto pt-4"
           >
-            <Link href="/upload" className="w-full sm:w-auto">
+            {/* Upload Now Button - Dynamic Routing */}
+            <Link href={isLoggedIn ? getDashboardLink() : "/login"} className="w-full sm:w-auto">
               <button className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-green-500 text-white rounded-lg font-semibold text-lg hover:bg-green-400 transition duration-300 shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] transform hover:-translate-y-1 cursor-pointer">
                 <UploadCloud size={22} />
-                Upload Now
+                {isLoggedIn ? "Go to Dashboard" : "Upload Now"}
               </button>
             </Link>
-            
-            <Link href="/resources" className="w-full sm:w-auto">
+
+            {/* Explore Questions Button - ID based scrolling */}
+            <Link href="/#resources" className="w-full sm:w-auto">
               <button className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-white/10 text-white rounded-lg font-semibold text-lg backdrop-blur-md border border-white/20 hover:bg-white/20 transition duration-300 transform hover:-translate-y-1 cursor-pointer">
                 <BookOpenText size={22} />
                 Explore Questions
               </button>
             </Link>
           </motion.div>
-          
+
         </motion.div>
       </div>
     </section>

@@ -5,35 +5,36 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-green-950 text-green-50 pt-16 pb-8 border-t border-green-900">
+    <footer className="bg-green-950 text-green-50 pt-16 pb-8 border-t border-green-900 w-full overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Section: Links and Brand */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 mb-12">
+          
           {/* Brand Info */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="flex flex-col items-start text-left">
             <div className="flex items-center gap-3 mb-4">
               <Image src="/logo.png" alt="ResourceHub Logo" width={40} height={40} className="w-10 h-10 object-contain" />
               <h2 className="text-2xl font-bold text-white tracking-tight">ResourceHub</h2>
             </div>
-            <p className="text-green-200/80 max-w-sm">
+            <p className="text-green-200/80 max-w-sm text-sm sm:text-base leading-relaxed">
               The ultimate platform for university students to share, find, and discuss study materials, past questions, and assignments.
             </p>
           </div>
 
           {/* Quick Links */}
-          <div className="flex flex-col items-center md:items-start">
+          <div className="flex flex-col items-start">
             <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
             <ul className="space-y-3">
-              <li><Link href="#" className="text-green-200 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link href="#" className="text-green-200 hover:text-white transition-colors">Contact</Link></li>
-              <li><Link href="#" className="text-green-200 hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-green-200 hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link href="/about" className="text-green-200 hover:text-white transition-colors text-sm sm:text-base">About Us</Link></li>
+              <li><Link href="/contact" className="text-green-200 hover:text-white transition-colors text-sm sm:text-base">Contact</Link></li>
+              <li><Link href="/privacy" className="text-green-200 hover:text-white transition-colors text-sm sm:text-base">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-green-200 hover:text-white transition-colors text-sm sm:text-base">Terms of Service</Link></li>
             </ul>
           </div>
 
           {/* Social Links */}
-          <div className="flex flex-col items-center md:items-start">
+          <div className="flex flex-col items-start">
             <h3 className="text-lg font-semibold text-white mb-4">Connect With Us</h3>
             <div className="flex gap-4">
               <Link href="#" className="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center text-green-300 hover:bg-green-700 hover:text-white transition-colors shadow-sm">
@@ -56,13 +57,14 @@ export default function Footer() {
         <div className="w-full h-px bg-green-900/60 mb-8"></div>
 
         {/* Bottom Section: Developer Info & Copyright */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-green-400 text-sm">
+        {/* FIX: Changed items-start md:items-center to simply items-center so it centers on mobile too */}
+        <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-8 md:gap-6">
+          <p className="text-green-400 text-sm text-center md:text-left">
             &copy; {new Date().getFullYear()} ResourceHub. All rights reserved.
           </p>
           
           {/* Developer Section */}
-          <div className="flex items-center gap-4 bg-green-900/40 p-3 pr-6 rounded-full border border-green-800/50 backdrop-blur-sm shadow-inner transition-transform hover:scale-105">
+          <div className="flex items-center gap-4 bg-green-900/40 p-3 pr-6 rounded-full border border-green-800/50 backdrop-blur-sm shadow-inner transition-transform hover:scale-105 w-fit">
             <div className="relative">
               <Image 
                 src="/atul2.jpg" 
@@ -82,11 +84,11 @@ export default function Footer() {
               </div>
             </div>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="text-xs text-green-300 font-medium uppercase tracking-wider">Developed By</span>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold text-white leading-none mt-1">Atul Paul</span>
-                <Link href="#" className="text-green-400 hover:text-white transition-colors mt-1">
+                <Link href="https://github.com/atulpaul" target="_blank" className="text-green-400 hover:text-white transition-colors mt-1">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                 </Link>
               </div>
