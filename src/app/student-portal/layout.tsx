@@ -71,8 +71,8 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-center px-4 border-b border-gray-200 overflow-hidden shrink-0">
-          <Link href="/" className="text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">
-            {isMinimized ? "R" : <>Resource<span className="text-gray-800">Hub</span></>}
+          <Link href="https://resource-hub-diu.vercel.app" className="text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">
+            {isMinimized ? "R" : <>Resource<span className="text-gray-800">Hub</span></>} 
           </Link>
         </div>
 

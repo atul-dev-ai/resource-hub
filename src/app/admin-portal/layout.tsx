@@ -78,7 +78,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
       {/* ================= MOBILE OVERLAY ================= */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -86,15 +86,13 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
       {/* ================= GREEN SIDEBAR ================= */}
       <aside
-        className={`fixed lg:relative inset-y-0 left-0 flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-transform duration-300 ease-in-out z-50 lg:z-40 ${
-          isMinimized ? "lg:w-20 w-64" : "w-64"
-        } ${
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } shrink-0 shadow-2xl overflow-hidden`}
+        className={`fixed lg:relative inset-y-0 left-0 flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-transform duration-300 ease-in-out z-50 lg:z-40 ${isMinimized ? "lg:w-20 w-64" : "w-64"
+          } ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          } shrink-0 shadow-2xl overflow-hidden`}
       >
         {/* Sidebar Header (Fixed Overflow Issue) */}
         <div className="h-16 flex items-center justify-between lg:justify-center px-4 border-b border-emerald-800 shrink-0 bg-[#022c22]">
-          <Link href="/admin-portal" className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
+          <Link href="/" className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
             <ShieldCheck className="text-emerald-400 shrink-0" size={24} />
             {(!isMinimized || isMobileMenuOpen) && (
               <span className="text-[17px] font-black text-white tracking-wider truncate">
@@ -102,7 +100,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
               </span>
             )}
           </Link>
-          
+
           {/* Mobile Close Button */}
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-emerald-400 hover:text-white p-1 shrink-0">
             <X size={24} />
@@ -160,18 +158,18 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
 
       {/* ================= MAIN CONTENT AREA ================= */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        
+
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30 shrink-0 shadow-sm relative">
           <div className="flex items-center gap-4">
-            
+
             {/* Mobile Hamburger Button */}
-            <button 
+            <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg lg:hidden cursor-pointer"
             >
               <Menu size={24} />
             </button>
-            
+
             <div className="hidden sm:flex items-center gap-2">
               <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-200">
                 {userProfile.role.replace('_', ' ')}
@@ -202,13 +200,13 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                 <>
                   <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsProfileOpen(false)}></div>
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
-                    
+
                     <Link href="/admin-portal/settings" onClick={() => setIsProfileOpen(false)}>
                       <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
                         <UserCircle size={18} className="text-slate-400" /> Profile Settings
                       </div>
                     </Link>
-                    
+
                     <div className="h-px bg-slate-100 my-1"></div>
 
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left">

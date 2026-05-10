@@ -4,15 +4,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogIn, User } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  
+  // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  
+  const supabase = createClient();
 
-  // Scroll korle navbar e shadow ar blur effect asbe (Modern UI)
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -21,10 +25,71 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Fetch Session and Role
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        setIsLoggedIn(true);
+        // Get user role from profiles table
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+          
+        if (profile) {
+          setUserRole(profile.role);
+        }
+      } else {
+        setIsLoggedIn(false);
+        setUserRole(null);
+      }
+    };
+
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setIsLoggedIn(true);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+            
+          if (profile) setUserRole(profile.role);
+        } else {
+          setIsLoggedIn(false);
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // Function to determine correct dashboard link based on role
+  const getDashboardLink = () => {
+    if (!userRole) return "/login";
+    
+    // Check if role is admin-like
+    if (['super_admin', 'admin', 'moderator'].includes(userRole)) {
+      return "/admin-portal";
+    }
+    
+    // Default fallback to student portal
+    return "/student-portal";
+  };
+
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Explore / Resources", path: "/#resources" },
-    // { name: "Upload", path: "/upload" },
     { name: "Departments", path: "/#departments" },
     { name: "How it Works", path: "/#how-it-works" },
   ];
@@ -58,41 +123,18 @@ export default function Navbar() {
                 className="relative text-green-50 hover:text-white font-medium transition-colors cursor-pointer group"
               >
                 {link.name}
-                {/* Hover Underline Animation */}
                 <span className="absolute left-0 bottom-[-4px] w-0 h-[2px] bg-green-300 transition-all duration-300 group-hover:w-full"></span>
               </Link>
             ))}
 
-            {/* Action Buttons (Profile / Login) */}
+            {/* Action Buttons (Dashboard / Login) */}
             <div className="flex items-center space-x-4 ml-4 border-l pl-4 border-green-400/30">
               {isLoggedIn ? (
-                <div className="relative">
-                  <button 
-                    onClick={() => setProfileOpen(!profileOpen)}
-                    className="p-2 bg-green-600/50 text-white rounded-full hover:bg-green-500/70 transition cursor-pointer flex items-center justify-center border border-green-400/30"
-                  >
-                    <User size={20} />
+                <Link href={getDashboardLink()}>
+                  <button className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-400 transition duration-300 cursor-pointer font-bold text-sm shadow-md hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transform hover:-translate-y-0.5 border border-green-400/50">
+                    <LayoutDashboard size={18} /> Dashboard
                   </button>
-                  
-                  <AnimatePresence>
-                    {profileOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 mt-3 w-48 bg-white border border-gray-100 shadow-xl rounded-2xl overflow-hidden z-50"
-                      >
-                        <div className="py-1">
-                          <Link href="/profile" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600">My Profile</Link>
-                          <Link href="/uploads" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600">My Uploads</Link>
-                          <Link href="/status" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-600">Pending / Approved</Link>
-                          <button onClick={() => { setIsLoggedIn(false); setProfileOpen(false); }} className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                </Link>
               ) : (
                 <Link href="/login">
                   <button className="flex items-center gap-2 bg-white text-green-700 px-5 py-2 rounded-full hover:bg-green-50 transition duration-300 cursor-pointer font-bold text-sm shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
@@ -115,7 +157,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown (Animated with Framer Motion) */}
+      {/* Mobile Menu Dropdown */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -139,20 +181,11 @@ export default function Navbar() {
               
               <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col space-y-2">
                 {isLoggedIn ? (
-                  <>
-                    <Link href="/profile" onClick={() => setIsOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors cursor-pointer">
-                      My Profile
-                    </Link>
-                    <Link href="/uploads" onClick={() => setIsOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors cursor-pointer">
-                      My Uploads
-                    </Link>
-                    <Link href="/status" onClick={() => setIsOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors cursor-pointer">
-                      Pending / Approved
-                    </Link>
-                    <button onClick={() => { setIsLoggedIn(false); setIsOpen(false); }} className="w-full text-left block px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer">
-                      Logout
+                  <Link href={getDashboardLink()} onClick={() => setIsOpen(false)}>
+                    <button className="w-full flex justify-center items-center gap-2 bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition duration-300 cursor-pointer font-medium">
+                      <LayoutDashboard size={18} /> Go to Dashboard
                     </button>
-                  </>
+                  </Link>
                 ) : (
                   <Link href="/login" onClick={() => setIsOpen(false)}>
                     <button className="w-full flex justify-center items-center gap-2 bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 transition duration-300 cursor-pointer font-medium">
