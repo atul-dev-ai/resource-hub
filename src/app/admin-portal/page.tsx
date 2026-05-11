@@ -6,6 +6,7 @@ import {
   Database, XCircle, Clock, ShieldCheck 
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import PremiumLoading from "@/components/PremiumLoading";
 
 export default function AdminDashboard() {
   const supabase = createClient();
@@ -21,38 +22,39 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    // In a real app, this should ideally be a single Supabase RPC call for performance.
-    // Simulating the data fetch structure for now based on your DB schema.
     const fetchDashboardStats = async () => {
       setLoading(true);
       try {
-        // Fetch resources (Simplified for demo, you'd use count queries in prod)
-        const { data: resources } = await supabase.from("resources").select("status, created_at");
-        const { data: users } = await supabase.from("profiles").select("role");
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString();
 
-        const today = new Date().toISOString().split('T')[0];
-
-        let pending = 0, approvedToday = 0, rejectedToday = 0;
-        
-        resources?.forEach(res => {
-          if (res.status === 'pending') pending++;
-          if (res.status === 'approved' && res.created_at.startsWith(today)) approvedToday++;
-          if (res.status === 'rejected' && res.created_at.startsWith(today)) rejectedToday++;
-        });
-
-        let modCount = 0;
-        users?.forEach(u => {
-          if (u.role === 'moderator' || u.role === 'admin' || u.role === 'super_admin') modCount++;
-        });
+        const [
+          { count: totalUsers },
+          { count: totalUploads },
+          { count: pendingApprovals },
+          { count: approvedToday },
+          { count: rejectedToday },
+          { count: reportsPending },
+          { count: activeModerators }
+        ] = await Promise.all([
+          supabase.from("profiles").select('*', { count: 'exact', head: true }),
+          supabase.from("resources").select('*', { count: 'exact', head: true }),
+          supabase.from("resources").select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from("resources").select('*', { count: 'exact', head: true }).eq('status', 'approved').gte('created_at', todayStr),
+          supabase.from("resources").select('*', { count: 'exact', head: true }).eq('status', 'rejected').gte('created_at', todayStr),
+          supabase.from("reports").select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+          supabase.from("profiles").select('*', { count: 'exact', head: true }).in('role', ['admin', 'moderator', 'super_admin'])
+        ]);
 
         setStats({
-          totalUsers: users?.length || 0,
-          totalUploads: resources?.length || 0,
-          pendingApprovals: pending,
-          approvedToday: approvedToday,
-          rejectedToday: rejectedToday,
-          reportsPending: 5, // Placeholder for reports table
-          activeModerators: modCount
+          totalUsers: totalUsers || 0,
+          totalUploads: totalUploads || 0,
+          pendingApprovals: pendingApprovals || 0,
+          approvedToday: approvedToday || 0,
+          rejectedToday: rejectedToday || 0,
+          reportsPending: reportsPending || 0,
+          activeModerators: activeModerators || 0
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -63,6 +65,11 @@ export default function AdminDashboard() {
 
     fetchDashboardStats();
   }, []);
+
+  // ডেটা লোড হওয়ার সময় প্রিমিয়াম লোডিং স্ক্রিন দেখাবে
+  if (loading) {
+    return <PremiumLoading />;
+  }
 
   const statCards = [
     { title: "Total Users", count: stats.totalUsers, icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
@@ -91,7 +98,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div>
-              <h3 className="text-3xl font-black text-gray-800">{loading ? "-" : stat.count}</h3>
+              <h3 className="text-3xl font-black text-gray-800">{stat.count}</h3>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">{stat.title}</p>
             </div>
           </div>
@@ -99,7 +106,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Action Required Alert */}
-      {stats.pendingApprovals > 0 && !loading && (
+      {stats.pendingApprovals > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3 text-orange-800">
             <Clock size={20} className="text-orange-600" />

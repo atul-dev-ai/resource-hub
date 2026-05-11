@@ -40,13 +40,13 @@ export default function Hero() {
   // --- Auth States & Logic Start ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  
+
   const supabase = createClient();
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
         setIsLoggedIn(true);
         const { data: profile } = await supabase
@@ -54,7 +54,7 @@ export default function Hero() {
           .select("role")
           .eq("id", session.user.id)
           .single();
-          
+
         if (profile) {
           setUserRole(profile.role);
         }
@@ -75,7 +75,7 @@ export default function Hero() {
             .select("role")
             .eq("id", session.user.id)
             .single();
-            
+
           if (profile) setUserRole(profile.role);
         } else {
           setIsLoggedIn(false);
@@ -90,8 +90,10 @@ export default function Hero() {
   }, []);
 
   const getDashboardLink = () => {
-    if (!userRole) return "/login";
-    if (['super_admin', 'admin', 'moderator'].includes(userRole)) {
+
+    if (!isLoggedIn) return "/login";
+
+    if (userRole && ['super_admin', 'admin', 'moderator'].includes(userRole)) {
       return "/admin-portal";
     }
     return "/student-portal";

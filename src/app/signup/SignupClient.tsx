@@ -21,7 +21,7 @@ export default function SignupClient() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<any[]>([]);
 
-  // Form State (Expanded with Phone, Semester, Section)
+  // Form State
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -152,7 +152,7 @@ export default function SignupClient() {
             department: formData.department,
             session_id: formData.sessionId,
             semester: formData.semester,
-            section: formData.section.toUpperCase(),
+            section: formData.section.toUpperCase(), // 22_A2 now supported
             role: 'student'
           }
         }
@@ -202,7 +202,6 @@ export default function SignupClient() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* Personal Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Full Name</label>
@@ -241,7 +240,6 @@ export default function SignupClient() {
               </div>
             </div>
 
-            {/* Academic Info Grid */}
             <div className="grid grid-cols-2 gap-4 mt-2">
               <div>
                 <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Department</label>
@@ -292,16 +290,16 @@ export default function SignupClient() {
                 <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Section <span className="text-[#A89880] lowercase font-normal">(optional)</span></label>
                 <div className="relative">
                   <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
+                  {/* FIX: Removed maxLength={3} and set to 10 to allow things like 22_A2 */}
                   <input 
                     type="text" value={formData.section} onChange={e => setFormData({...formData, section: e.target.value})}
-                    placeholder="e.g. A" disabled={lockoutTimer > 0} maxLength={3}
+                    placeholder="e.g. 22_A2" disabled={lockoutTimer > 0} maxLength={10}
                     className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-10 pr-4 text-xs md:text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all uppercase shadow-inner disabled:opacity-50"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Password */}
             <div className="pt-2">
               <label className="block text-[10px] md:text-xs font-bold text-[#5DCAA5] uppercase tracking-wider mb-2 ml-4">Secure Password</label>
               <div className="relative">

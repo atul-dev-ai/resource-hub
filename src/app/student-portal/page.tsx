@@ -1,11 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   FileText, CheckCircle, Clock, Eye, 
   ArrowRight, Download, FileType, CheckCircle2, Clock3 
 } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
+import PremiumLoading from "@/components/PremiumLoading";
 
 // Animation Variants
 const containerVariants = {
@@ -21,22 +24,90 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-// Dummy Data (Database add hole egula dynamic hobe)
-const stats = [
-  { title: "Total Uploads", count: "24", icon: FileText, color: "text-blue-600", bg: "bg-blue-100" },
-  { title: "Approved", count: "18", icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
-  { title: "Pending", count: "6", icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
-  { title: "Total Views", count: "342", icon: Eye, color: "text-purple-600", bg: "bg-purple-100" },
-];
-
-const recentResources = [
-  { id: 1, title: "Discrete Math Final Question 2025", type: "PDF", course: "CSE214", date: "2 days ago", status: "Approved" },
-  { id: 2, title: "Data Structure Lab Manual", type: "PDF", course: "CSE221", date: "5 days ago", status: "Approved" },
-  { id: 3, title: "Algorithm Midterm Handnote", type: "Image", course: "CSE222", date: "1 week ago", status: "Pending" },
-  { id: 4, title: "Software Engineering Slides", type: "PDF", course: "SWE311", date: "2 weeks ago", status: "Approved" },
-];
-
 export default function StudentDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("Student");
+  const [userStats, setUserStats] = useState({
+    total: 0,
+    approved: 0,
+    pending: 0,
+    views: 0
+  });
+  const [recentResources, setRecentResources] = useState<any[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const userId = session.user.id;
+
+        // Fetch User Profile (For Name)
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .single();
+
+        if (profile?.full_name) {
+          // Get first name only for friendly greeting
+          setUserName(profile.full_name.split(" ")[0]); 
+        }
+
+        // Fetch User's Uploaded Resources
+        const { data: resources, error } = await supabase
+          .from("resources")
+          .select("*")
+          .eq("uploader_id", userId)
+          .order("created_at", { ascending: false });
+
+        if (!error && resources) {
+          let approved = 0;
+          let pending = 0;
+          let views = 0;
+
+          resources.forEach(res => {
+            if (res.status === 'approved') approved++;
+            if (res.status === 'pending') pending++;
+            // If views_count exists in DB, add it, otherwise fallback to 0
+            views += res.views_count || 0; 
+          });
+
+          setUserStats({
+            total: resources.length,
+            approved,
+            pending,
+            views
+          });
+
+          // Set latest 5 resources for the table
+          setRecentResources(resources.slice(0, 5));
+        }
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudentData();
+  }, []);
+
+  if (loading) {
+    return <PremiumLoading />;
+  }
+
+  // Map state to the UI stats structure
+  const stats = [
+    { title: "Total Uploads", count: userStats.total.toString(), icon: FileText, color: "text-blue-600", bg: "bg-blue-100" },
+    { title: "Approved", count: userStats.approved.toString(), icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
+    { title: "Pending", count: userStats.pending.toString(), icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
+    { title: "Total Views", count: userStats.views.toString(), icon: Eye, color: "text-purple-600", bg: "bg-purple-100" },
+  ];
+
   return (
     <motion.div 
       variants={containerVariants} 
@@ -47,7 +118,7 @@ export default function StudentDashboard() {
       {/* Welcome Banner */}
       <motion.div variants={itemVariants} className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, Student! 👋</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {userName}! 👋</h1>
           <p className="text-blue-100 max-w-xl text-sm sm:text-base">
             Ready to ace your next exam? Check out the latest resources uploaded by your peers or contribute to the community by uploading your own notes.
           </p>
@@ -86,8 +157,8 @@ export default function StudentDashboard() {
       {/* Latest Resources Table */}
       <motion.div variants={itemVariants} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-800">Latest Resources</h2>
-          <Link href="/student-portal/resources" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+          <h2 className="text-lg font-bold text-gray-800">Your Recent Uploads</h2>
+          <Link href="/student-portal/my-uploads" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
             View All <ArrowRight size={16} />
           </Link>
         </div>
@@ -104,42 +175,75 @@ export default function StudentDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recentResources.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${item.type === 'PDF' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
-                        <FileType size={18} />
-                      </div>
-                      <span className="font-medium text-gray-900 text-sm">{item.title}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {item.course}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
-                    {item.date}
-                  </td>
-                  <td className="px-6 py-4">
-                    {item.status === "Approved" ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                        <CheckCircle2 size={14} /> Approved
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                        <Clock3 size={14} /> Pending
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-gray-400 hover:text-blue-600 bg-white border border-gray-200 hover:border-blue-200 rounded-lg transition-colors cursor-pointer shadow-sm">
-                      <Download size={18} />
-                    </button>
+              {recentResources.length > 0 ? (
+                recentResources.map((item) => {
+                  // File type detection
+                  const fileUrls = Array.isArray(item.file_urls) ? item.file_urls : [item.file_urls];
+                  const fileUrl = fileUrls[0] || "";
+                  const isPdf = fileUrl.toLowerCase().includes(".pdf");
+                  
+                  // Date formatting
+                  const formattedDate = new Date(item.created_at).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  });
+
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
+                            <FileType size={18} />
+                          </div>
+                          <span className="font-medium text-gray-900 text-sm line-clamp-1">{item.title}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase">
+                          {item.course_code || item.course_name || "N/A"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
+                        {formattedDate}
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.status === "approved" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200 capitalize">
+                            <CheckCircle2 size={14} /> Approved
+                          </span>
+                        ) : item.status === "rejected" ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200 capitalize">
+                            <Clock3 size={14} /> Rejected
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 capitalize">
+                            <Clock3 size={14} /> Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <a 
+                          href={fileUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex p-2 text-gray-400 hover:text-blue-600 bg-white border border-gray-200 hover:border-blue-200 rounded-lg transition-colors cursor-pointer shadow-sm"
+                        >
+                          <Download size={18} />
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <FileText size={40} className="mx-auto mb-3 text-gray-300" />
+                    <p className="font-medium">You haven't uploaded any resources yet.</p>
+                    <Link href="/student-portal/upload" className="text-blue-600 hover:underline text-sm mt-1 inline-block">
+                      Click here to upload your first resource.
+                    </Link>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
