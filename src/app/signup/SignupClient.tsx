@@ -209,7 +209,7 @@ export default function SignupClient() {
                   <User size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#5DCAA5]" />
                   <input 
                     type="text" required value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})}
-                    placeholder="John Doe" disabled={lockoutTimer > 0}
+                    placeholder="Atul Paul" disabled={lockoutTimer > 0}
                     className="w-full bg-[#36312a] border border-[#5DCAA5]/50 text-white rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-[#5DCAA5] focus:ring-4 focus:ring-[#5DCAA5]/20 transition-all shadow-inner disabled:opacity-50"
                   />
                 </div>

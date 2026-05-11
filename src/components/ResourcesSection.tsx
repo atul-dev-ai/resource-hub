@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Filter, BookOpen, FileText, Download, Tag, X, Eye, Loader2 } from "lucide-react";
+import { Search, Filter, BookOpen, FileText, Download, Tag, X, Eye, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 
@@ -15,8 +15,8 @@ const courses = ["All", "Structured Programming", "Discrete Math", "Data Structu
 const fileTypes = ["All", "PDF", "Image", "Zip"];
 
 export default function ResourcesSection() {
-  // States
   const [resources, setResources] = useState<any[]>([]);
+  const [userVotes, setUserVotes] = useState<Record<string, string>>({}); // { resource_id: 'like' | 'dislike' }
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("All");
@@ -26,51 +26,85 @@ export default function ResourcesSection() {
   const [selectedFileType, setSelectedFileType] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Auth States
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
-  // Fetch Data & Auth Status on Mount
   useEffect(() => {
     const checkUserAndFetchData = async () => {
-      // 1. Check Auth
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session?.user);
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
 
-      // 2. Fetch Resources from Supabase (FIX: Table name is 'resources')
       setIsLoading(true);
-      const { data, error } = await supabase
+      // Fetch Resources
+      const { data: resData, error: resError } = await supabase
         .from('resources') 
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error("Error fetching resources:", error);
+      if (resError) {
+        console.error("Error fetching resources:", resError);
         toast.error("Failed to load resources.");
-      } else if (data) {
-        setResources(data);
+      } else if (resData) {
+        setResources(resData);
       }
+
+      // If user is logged in, fetch their votes
+      if (session?.user) {
+        const { data: voteData } = await supabase
+          .from('resource_votes')
+          .select('resource_id, vote_type')
+          .eq('user_id', session.user.id);
+        
+        if (voteData) {
+          const votesMap: Record<string, string> = {};
+          voteData.forEach(v => {
+            votesMap[v.resource_id] = v.vote_type;
+          });
+          setUserVotes(votesMap);
+        }
+      }
+
       setIsLoading(false);
     };
 
     checkUserAndFetchData();
 
-    // Listen for Auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session?.user);
+      setUserId(session?.user?.id || null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle View / Download Click
-  const handleAction = (fileUrl: string, action: 'view' | 'download') => {
+  // --- View Tracking ---
+  const trackView = async (resourceId: string) => {
+    try {
+      // Optimistic UI update
+      setResources(prev => prev.map(res => 
+        res.id === resourceId ? { ...res, views_count: (res.views_count || 0) + 1 } : res
+      ));
+      
+      // We use RPC for atomic increment in DB, but since we haven't created the RPC yet,
+      // we'll fetch the current count and update it (Not fully atomic, but works for now).
+      const { data } = await supabase.from('resources').select('views_count').eq('id', resourceId).single();
+      const currentViews = data?.views_count || 0;
+      
+      await supabase.from('resources').update({ views_count: currentViews + 1 }).eq('id', resourceId);
+    } catch (e) {
+      console.error("View tracking failed");
+    }
+  };
+
+  const handleAction = (resourceId: string, fileUrl: string, action: 'view' | 'download') => {
     if (!isLoggedIn) {
       toast.error("Please login to view or download files.", { duration: 3000 });
-      setTimeout(() => {
-        router.push("/login"); 
-      }, 1500);
+      setTimeout(() => router.push("/login"), 1500);
       return;
     }
 
@@ -79,6 +113,7 @@ export default function ResourcesSection() {
       return;
     }
 
+    trackView(resourceId);
     toast.success(`${action === 'view' ? 'Opening' : 'Downloading'} resource...`);
     
     if (action === 'view') {
@@ -94,6 +129,61 @@ export default function ResourcesSection() {
     }
   };
 
+  // --- Like/Dislike Logic ---
+  const handleVote = async (resourceId: string, type: 'like' | 'dislike') => {
+    if (!isLoggedIn) {
+      toast.error("Please login to vote on resources.", { duration: 3000 });
+      setTimeout(() => router.push("/login"), 1500);
+      return;
+    }
+
+    const currentVote = userVotes[resourceId];
+    const resource = resources.find(r => r.id === resourceId);
+    if (!resource || !userId) return;
+
+    let newLikes = resource.likes_count || 0;
+    let newDislikes = resource.dislikes_count || 0;
+    
+    const newVotes = { ...userVotes };
+
+    try {
+      if (currentVote === type) {
+        // User clicked the same button again -> Remove vote
+        delete newVotes[resourceId];
+        type === 'like' ? newLikes-- : newDislikes--;
+        await supabase.from('resource_votes').delete().match({ resource_id: resourceId, user_id: userId });
+      } else {
+        // Changing vote or new vote
+        if (currentVote === 'like') newLikes--;
+        if (currentVote === 'dislike') newDislikes--;
+        
+        type === 'like' ? newLikes++ : newDislikes++;
+        newVotes[resourceId] = type;
+
+        await supabase.from('resource_votes').upsert({
+          resource_id: resourceId,
+          user_id: userId,
+          vote_type: type
+        }, { onConflict: 'resource_id, user_id' });
+      }
+
+      // Update Resource Table Stats
+      await supabase.from('resources').update({
+        likes_count: newLikes,
+        dislikes_count: newDislikes
+      }).eq('id', resourceId);
+
+      // Update UI State
+      setUserVotes(newVotes);
+      setResources(prev => prev.map(res => 
+        res.id === resourceId ? { ...res, likes_count: newLikes, dislikes_count: newDislikes } : res
+      ));
+
+    } catch (error) {
+      toast.error("Failed to register vote.");
+    }
+  };
+
   // Advanced Filter Logic
   const filteredResources = resources.filter(res => {
     const title = res.title || "";
@@ -103,7 +193,6 @@ export default function ResourcesSection() {
     const sem = res.semester || "";
     const course = res.course_name || "";
     
-    // File Type detection (as it's not explicitly in your DB schema, we extract from file_urls)
     const fileUrls = Array.isArray(res.file_urls) ? res.file_urls : [res.file_urls];
     const fileUrlString = fileUrls[0] || "";
     const fileType = fileUrlString.toLowerCase().endsWith('.pdf') ? 'PDF' 
@@ -242,11 +331,11 @@ export default function ResourcesSection() {
                   const course = resource.course_name || "N/A";
                   const tags = resource.tags || [];
                   
-                  // Extract first URL if it's an array, otherwise string
                   const fileUrlsArray = Array.isArray(resource.file_urls) ? resource.file_urls : [resource.file_urls];
                   const fileUrl = fileUrlsArray[0] || "";
-                  
                   const isPdf = fileUrl.toLowerCase().includes(".pdf");
+
+                  const userVote = userVotes[resource.id]; // 'like', 'dislike', or undefined
 
                   return (
                     <motion.div
@@ -289,30 +378,54 @@ export default function ResourcesSection() {
                           </div>
                         )}
 
-                        {/* Footer (File Info & Buttons) */}
+                        {/* --- Community Moderation Footer --- */}
                         <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                          <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
-                            {/* file size column absent in DB, static fallback removed for accuracy */}
-                            <span className="uppercase">{isPdf ? "PDF" : "FILE"}</span>
+                          
+                          {/* Left: Views & Votes */}
+                          <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
+                            {/* View Count */}
+                            <div className="flex items-center gap-1" title="Total Views">
+                              <Eye size={14} className="text-gray-500" /> 
+                              <span>{resource.views_count || 0}</span>
+                            </div>
+
+                            {/* Likes */}
+                            <button 
+                              onClick={() => handleVote(resource.id, 'like')}
+                              className={`flex items-center gap-1 transition-colors cursor-pointer ${userVote === 'like' ? 'text-green-400' : 'hover:text-green-400'}`}
+                            >
+                              <ThumbsUp size={14} className={userVote === 'like' ? 'fill-green-400/30' : ''} /> 
+                              <span>{resource.likes_count || 0}</span>
+                            </button>
+
+                            {/* Dislikes */}
+                            <button 
+                              onClick={() => handleVote(resource.id, 'dislike')}
+                              className={`flex items-center gap-1 transition-colors cursor-pointer ${userVote === 'dislike' ? 'text-red-400' : 'hover:text-red-400'}`}
+                            >
+                              <ThumbsDown size={14} className={userVote === 'dislike' ? 'fill-red-400/30' : ''} /> 
+                              <span>{resource.dislikes_count || 0}</span>
+                            </button>
                           </div>
                           
-                          {/* View & Download Buttons */}
+                          {/* Right: View & Download Buttons */}
                           <div className="flex items-center gap-2">
                             <button 
-                              onClick={() => handleAction(fileUrl, 'view')}
+                              onClick={() => handleAction(resource.id, fileUrl, 'view')}
                               title="View Resource"
                               className="flex items-center justify-center p-2 rounded-full cursor-pointer bg-blue-600/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
                             >
                               <Eye size={18} />
                             </button>
                             <button 
-                              onClick={() => handleAction(fileUrl, 'download')}
+                              onClick={() => handleAction(resource.id, fileUrl, 'download')}
                               title="Download Resource"
                               className="flex items-center justify-center p-2 rounded-full cursor-pointer bg-green-600/20 text-green-400 hover:bg-green-500 hover:text-white transition-all shadow-sm"
                             >
                               <Download size={18} />
                             </button>
                           </div>
+
                         </div>
                       </div>
                     </motion.div>
