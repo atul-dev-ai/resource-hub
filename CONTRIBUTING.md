@@ -42,7 +42,7 @@ You are welcome to contribute in the following areas:
 2. Clone your fork
 
    ```
-   git clone https://github.com/your-username/repo-name.git
+   git clone https://github.com/atul-dev-ai/resource-hub.git
    ```
 3. Install dependencies
 
