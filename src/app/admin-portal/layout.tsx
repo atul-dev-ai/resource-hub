@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FileCheck, Database, Users,
   Layers, AlertTriangle, Megaphone, Activity,
   Settings, ShieldCheck, ChevronLeft, ChevronRight,
-  Menu, X, LogOut, ChevronDown, Key, UserCircle
+  Menu, X, LogOut, ChevronDown, Key, UserCircle, CalendarDays
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -20,6 +20,7 @@ const allAdminMenuItems = [
   { name: "Reports", path: "/admin-portal/reports", icon: AlertTriangle, roles: ["super_admin", "admin", "moderator"] },
   { name: "Users", path: "/admin-portal/users", icon: Users, roles: ["super_admin", "admin"] },
   { name: "Departments & Courses", path: "/admin-portal/departments", icon: Layers, roles: ["super_admin", "admin"] },
+  { name: "Routine & Rooms", path: "/admin-portal/routine", icon: CalendarDays, roles: ["super_admin", "admin", "moderator"] },
   { name: "Announcements", path: "/admin-portal/announcements", icon: Megaphone, roles: ["super_admin", "admin"] },
   { name: "Activity Logs", path: "/admin-portal/logs", icon: Activity, roles: ["super_admin", "admin"] },
   { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin", "moderator"] },
@@ -84,40 +85,40 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
         />
       )}
 
-      {/* ================= GREEN SIDEBAR ================= */}
+      {/* ================= PINK SIDEBAR ================= */}
       <aside
-        className={`fixed lg:relative inset-y-0 left-0 flex flex-col bg-[#064e3b] text-emerald-100 h-full transition-transform duration-300 ease-in-out z-50 lg:z-40 ${isMinimized ? "lg:w-20 w-64" : "w-64"
-          } ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          } shrink-0 shadow-2xl overflow-hidden`}
+        className={`fixed lg:relative inset-y-0 left-0 flex flex-col bg-pink-950 text-pink-100 transition-transform duration-300 ease-in-out z-50 lg:z-40 ${isMinimized ? "lg:w-20 w-64" : "w-64"
+          } ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-[120%] lg:translate-x-0"
+          } shrink-0 shadow-2xl overflow-hidden m-4 rounded-[2rem] h-[calc(100vh-2rem)]`}
       >
         {/* Sidebar Header (Fixed Overflow Issue) */}
-        <div className="h-16 flex items-center justify-between lg:justify-center px-4 border-b border-emerald-800 shrink-0 bg-[#022c22]">
+        <div className="h-16 flex items-center justify-between lg:justify-center px-4 border-b border-pink-900/50 shrink-0 bg-pink-900/20">
           <Link href="/" className="flex items-center gap-2 min-w-0" onClick={() => setIsMobileMenuOpen(false)}>
-            <ShieldCheck className="text-emerald-400 shrink-0" size={24} />
+            <ShieldCheck className="text-pink-400 shrink-0" size={24} />
             {(!isMinimized || isMobileMenuOpen) && (
               <span className="text-[17px] font-black text-white tracking-wider truncate">
-                CONTROL<span className="text-emerald-500">CENTER</span>
+                CONTROL<span className="text-pink-400">CENTER</span>
               </span>
             )}
           </Link>
 
           {/* Mobile Close Button */}
-          <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-emerald-400 hover:text-white p-1 shrink-0">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden text-pink-400 hover:text-white p-1 shrink-0">
             <X size={24} />
           </button>
         </div>
 
         {/* Sidebar Menu Items */}
         <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar overflow-x-hidden">
-          <p className={`px-3 text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3 ${isMinimized && !isMobileMenuOpen ? "hidden" : "block"}`}>Main Navigation</p>
+          <p className={`px-3 text-[10px] font-bold text-pink-500/80 uppercase tracking-widest mb-3 ${isMinimized && !isMobileMenuOpen ? "hidden" : "block"}`}>Main Navigation</p>
 
           {filteredMenu.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)} title={isMinimized ? item.name : ""}>
-                <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-emerald-600 text-white font-bold" : "hover:bg-emerald-800 hover:text-white font-medium"
+                <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-xl transition-all cursor-pointer group ${isActive ? "bg-pink-800 text-white font-bold" : "hover:bg-pink-900/50 hover:text-white font-medium"
                   }`}>
-                  <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-300 shrink-0"}`} />
+                  <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-white" : "text-pink-400 group-hover:text-pink-300 shrink-0"}`} />
                   {(!isMinimized || isMobileMenuOpen) && <span className="text-sm whitespace-nowrap">{item.name}</span>}
                 </div>
               </Link>
@@ -131,9 +132,9 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                 const isActive = pathname === item.path;
                 return (
                   <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)} title={isMinimized ? item.name : ""}>
-                    <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg transition-all cursor-pointer group ${isActive ? "bg-red-900/50 text-red-200 border border-red-800/50" : "hover:bg-red-900/30 hover:text-red-300"
+                    <div className={`flex items-center ${isMinimized && !isMobileMenuOpen ? "justify-center px-0" : "px-3"} py-2.5 rounded-xl transition-all cursor-pointer group ${isActive ? "bg-rose-900/50 text-rose-200 border border-rose-800/50" : "hover:bg-rose-900/30 hover:text-rose-300"
                       }`}>
-                      <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-red-400" : "text-red-500/70 group-hover:text-red-400 shrink-0"}`} />
+                      <item.icon className={`w-5 h-5 ${isMinimized && !isMobileMenuOpen ? "" : "mr-3"} ${isActive ? "text-rose-400" : "text-rose-500/70 group-hover:text-rose-400 shrink-0"}`} />
                       {(!isMinimized || isMobileMenuOpen) && <span className="text-sm whitespace-nowrap font-medium">{item.name}</span>}
                     </div>
                   </Link>
@@ -144,10 +145,10 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
         </div>
 
         {/* Desktop Collapse Button */}
-        <div className="hidden lg:block p-3 border-t border-emerald-800 shrink-0 bg-[#022c22]">
+        <div className="hidden lg:block p-3 border-t border-pink-900/50 shrink-0 bg-pink-900/20">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="w-full flex items-center justify-center py-2.5 bg-emerald-900/50 text-emerald-300 rounded-lg hover:bg-emerald-800 hover:text-white transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center py-2.5 bg-pink-900/40 text-pink-300 rounded-xl hover:bg-pink-800 hover:text-white transition-colors cursor-pointer"
           >
             {isMinimized ? <ChevronRight size={20} /> : (
               <div className="flex items-center gap-2"><ChevronLeft size={18} /><span className="font-bold text-sm">Collapse</span></div>
@@ -159,7 +160,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
       {/* ================= MAIN CONTENT AREA ================= */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
 
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-30 shrink-0 shadow-sm relative">
+        <header className="h-16 bg-white border border-gray-200 flex items-center justify-between px-6 z-30 shrink-0 shadow-sm relative mt-4 mx-4 rounded-full">
           <div className="flex items-center gap-4">
 
             {/* Mobile Hamburger Button */}
@@ -171,7 +172,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
             </button>
 
             <div className="hidden sm:flex items-center gap-2">
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-200">
+              <span className="px-2.5 py-1 bg-pink-100 text-pink-800 text-[10px] font-black uppercase tracking-wider rounded-md border border-pink-200">
                 {userProfile.role.replace('_', ' ')}
               </span>
             </div>
@@ -183,11 +184,11 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-gray-50 border border-transparent transition-all cursor-pointer"
               >
-                <div className="relative h-9 w-9 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="relative h-9 w-9 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center overflow-hidden shrink-0">
                   {userProfile?.avatar_url ? (
                     <Image src={userProfile.avatar_url} alt="Profile" fill className="object-cover" sizes="36px" />
                   ) : (
-                    <span className="text-emerald-700 font-bold text-sm">{userProfile?.full_name?.charAt(0) || "A"}</span>
+                    <span className="text-pink-700 font-bold text-sm">{userProfile?.full_name?.charAt(0) || "A"}</span>
                   )}
                 </div>
                 <div className="hidden md:flex flex-col items-start">

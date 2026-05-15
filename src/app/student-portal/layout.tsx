@@ -9,12 +9,13 @@ import Image from "next/image";
 import {
   Home, BookOpen, UploadCloud, Folder, Layers,
   Bookmark, Bell, User, Settings,
-  Search, Menu, X, PlusCircle, ChevronLeft, ChevronRight, ChevronDown, LogOut, AlertTriangle
+  Search, Menu, X, PlusCircle, ChevronLeft, ChevronRight, ChevronDown, LogOut, AlertTriangle, CalendarDays
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 const menuItems = [
   { name: "Dashboard", path: "/student-portal", icon: Home },
+  { name: "Class Routine", path: "/student-portal/routine", icon: CalendarDays },
   { name: "Resources", path: "/student-portal/resources", icon: BookOpen },
   { name: "Upload", path: "/student-portal/upload", icon: UploadCloud },
   { name: "My Uploads", path: "/student-portal/my-uploads", icon: Folder },
@@ -65,14 +66,14 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
       {/* ================= LEFT SIDEBAR (DESKTOP) ================= */}
       {/* FIX: Added z-20 and relative positioning to properly layer the sidebar */}
       <aside 
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 h-full transition-all duration-300 relative z-20 ${
+        className={`hidden lg:flex flex-col bg-emerald-950 text-emerald-100 transition-all duration-300 relative z-20 m-4 rounded-[2rem] shadow-xl overflow-hidden h-[calc(100vh-2rem)] shrink-0 ${
           isMinimized ? "w-20" : "w-64"
         }`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center px-4 border-b border-gray-200 overflow-hidden shrink-0">
-          <Link href="https://resource-hub-diu.vercel.app" className="text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">
-            {isMinimized ? "R" : <>Resource<span className="text-gray-800">Hub</span></>} 
+        <div className="h-16 flex items-center justify-center px-4 border-b border-emerald-900/50 overflow-hidden shrink-0 bg-emerald-900/20">
+          <Link href="https://resource-hub-diu.vercel.app" className="text-2xl font-bold text-white cursor-pointer whitespace-nowrap">
+            {isMinimized ? "R" : <>Resource<span className="text-emerald-400">Hub</span></>} 
           </Link>
         </div>
 
@@ -80,17 +81,17 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar overflow-x-hidden">
           
           {!isMinimized && (
-            <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 transition-opacity">Main Menu</p>
+            <p className="px-3 text-xs font-semibold text-emerald-500/80 uppercase tracking-wider mb-2 transition-opacity">Main Menu</p>
           )}
           
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
             return (
               <Link key={item.name} href={item.path} title={isMinimized ? item.name : ""}>
-                <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg mb-1 transition-colors cursor-pointer group ${
-                  isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-xl mb-1 transition-colors cursor-pointer group ${
+                  isActive ? "bg-emerald-800 text-white font-bold" : "text-emerald-100 hover:bg-emerald-900/50 hover:text-white font-medium"
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600 shrink-0"}`} />
+                  <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-300 shrink-0"}`} />
                   {!isMinimized && <span className="font-medium text-sm whitespace-nowrap">{item.name}</span>}
                 </div>
               </Link>
@@ -99,16 +100,16 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
 
           <div className="pt-6 pb-2">
             {!isMinimized && (
-              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 transition-opacity">Account</p>
+              <p className="px-3 text-xs font-semibold text-emerald-500/80 uppercase tracking-wider mb-2 transition-opacity">Account</p>
             )}
             {bottomMenuItems.map((item) => {
               const isActive = pathname === item.path;
               return (
                 <Link key={item.name} href={item.path} title={isMinimized ? item.name : ""}>
-                  <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-lg mb-1 transition-colors cursor-pointer group ${
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  <div className={`flex items-center ${isMinimized ? "justify-center px-0" : "px-3"} py-2.5 rounded-xl mb-1 transition-colors cursor-pointer group ${
+                    isActive ? "bg-emerald-800 text-white font-bold" : "text-emerald-100 hover:bg-emerald-900/50 hover:text-white font-medium"
                   }`}>
-                    <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600 shrink-0"}`} />
+                    <item.icon className={`w-5 h-5 ${isMinimized ? "" : "mr-3"} ${isActive ? "text-white" : "text-emerald-400 group-hover:text-emerald-300 shrink-0"}`} />
                     {!isMinimized && <span className="font-medium text-sm whitespace-nowrap">{item.name}</span>}
                   </div>
                 </Link>
@@ -118,10 +119,10 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
         </div>
 
         {/* Minimize Button */}
-        <div className="p-4 border-t border-gray-200 flex justify-center shrink-0">
+        <div className="p-4 border-t border-emerald-900/50 flex justify-center shrink-0 bg-emerald-900/20">
           <button 
             onClick={() => setIsMinimized(!isMinimized)}
-            className={`w-full flex items-center ${isMinimized ? "justify-center" : "px-4"} py-2.5 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer`}
+            className={`w-full flex items-center ${isMinimized ? "justify-center" : "px-4"} py-2.5 bg-emerald-900/40 text-emerald-300 rounded-xl hover:bg-emerald-800 hover:text-white transition-colors cursor-pointer`}
             title={isMinimized ? "Expand Sidebar" : "Minimize Sidebar"}
           >
             {isMinimized ? (
@@ -129,7 +130,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
             ) : (
               <div className="flex items-center gap-2">
                 <ChevronLeft size={20} />
-                <span className="font-medium text-sm">Collapse</span>
+                <span className="font-bold text-sm">Collapse</span>
               </div>
             )}
           </button>
@@ -147,37 +148,37 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
             />
             
             <motion.aside
-              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 bg-white flex flex-col shadow-2xl lg:hidden"
+              initial={{ x: "-120%" }} animate={{ x: 0 }} exit={{ x: "-120%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="fixed inset-y-0 left-0 z-50 w-64 bg-emerald-950 text-emerald-100 flex flex-col shadow-2xl lg:hidden m-4 rounded-[2rem] h-[calc(100vh-2rem)] overflow-hidden"
             >
-              <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200 shrink-0">
-                <span className="text-2xl font-bold text-blue-600">Resource<span className="text-gray-800">Hub</span></span>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full cursor-pointer">
+              <div className="h-16 flex items-center justify-between px-6 border-b border-emerald-900/50 shrink-0 bg-emerald-900/20">
+                <span className="text-2xl font-bold text-white">Resource<span className="text-emerald-400">Hub</span></span>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-emerald-400 hover:bg-emerald-900/50 hover:text-white rounded-full cursor-pointer">
                   <X size={24} />
                 </button>
               </div>
               
               <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
-                <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Main Menu</p>
+                <p className="px-3 text-xs font-semibold text-emerald-500/80 uppercase tracking-wider mb-2">Main Menu</p>
                 {menuItems.map((item) => (
                   <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)}>
-                    <div className={`flex items-center px-3 py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
-                      pathname === item.path ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-100 font-medium"
+                    <div className={`flex items-center px-3 py-3 rounded-xl mb-1 transition-colors cursor-pointer ${
+                      pathname === item.path ? "bg-emerald-800 text-white font-bold" : "text-emerald-100 hover:bg-emerald-900/50 font-medium"
                     }`}>
-                      <item.icon className="w-5 h-5 mr-3 shrink-0" />
+                      <item.icon className={`w-5 h-5 mr-3 shrink-0 ${pathname === item.path ? "text-white" : "text-emerald-400"}`} />
                       {item.name}
                     </div>
                   </Link>
                 ))}
 
                 <div className="pt-6 pb-2">
-                  <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Account</p>
+                  <p className="px-3 text-xs font-semibold text-emerald-500/80 uppercase tracking-wider mb-2">Account</p>
                   {bottomMenuItems.map((item) => (
                     <Link key={item.name} href={item.path} onClick={() => setIsMobileMenuOpen(false)}>
-                      <div className={`flex items-center px-3 py-3 rounded-lg mb-1 transition-colors cursor-pointer ${
-                        pathname === item.path ? "bg-blue-50 text-blue-600 font-semibold" : "text-gray-600 hover:bg-gray-100 font-medium"
+                      <div className={`flex items-center px-3 py-3 rounded-xl mb-1 transition-colors cursor-pointer ${
+                        pathname === item.path ? "bg-emerald-800 text-white font-bold" : "text-emerald-100 hover:bg-emerald-900/50 font-medium"
                       }`}>
-                        <item.icon className="w-5 h-5 mr-3 shrink-0" />
+                        <item.icon className={`w-5 h-5 mr-3 shrink-0 ${pathname === item.path ? "text-white" : "text-emerald-400"}`} />
                         {item.name}
                       </div>
                     </Link>
@@ -194,7 +195,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
         
         {/* TOPBAR */}
         {/* FIX: Changed z-10 to z-30 and added relative positioning */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 shrink-0 relative">
+        <header className="h-16 bg-white border border-gray-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 shrink-0 relative mt-4 mx-4 rounded-full shadow-sm">
           <div className="flex items-center flex-1 gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -215,7 +216,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
 
           <div className="flex items-center gap-3 sm:gap-5">
             <Link href="/student-portal/upload">
-              <button className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300 font-medium text-sm shadow-sm cursor-pointer">
+              <button className="hidden sm:flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition duration-300 font-medium text-sm shadow-sm cursor-pointer">
                 <PlusCircle size={18} />
                 Quick Upload
               </button>
@@ -232,11 +233,11 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all cursor-pointer"
               >
-                <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden relative shrink-0">
+                <div className="h-9 w-9 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center overflow-hidden relative shrink-0">
                   {userProfile?.avatar_url ? (
                     <Image src={userProfile.avatar_url} alt="Profile" fill className="object-cover" sizes="36px" />
                   ) : (
-                    <span className="text-blue-700 font-bold text-sm">
+                    <span className="text-emerald-700 font-bold text-sm">
                       {userProfile?.full_name ? userProfile.full_name.charAt(0).toUpperCase() : "U"}
                     </span>
                   )}

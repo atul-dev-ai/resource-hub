@@ -1,0 +1,106 @@
+1. academic_sessions:
+	id
+	term
+	year
+	batch_code
+	is_active
+	created_at
+	
+2. activity_logs:
+	id
+	user_id
+	user_email
+	action
+	description
+	ip_addess(NULL)
+	created_at
+	
+3. announcements:
+	id
+	title
+	content
+	type
+	is_pinned
+	author_id
+	created_at
+	
+4. comments:
+	id
+	resource_id
+	user_id
+	content
+	created_at
+	
+5. courses:
+	id
+	department_code
+	course_code
+	course_name
+	semester
+	created_at
+	updated_at(column nai)
+
+6. departments:
+	id
+	code
+	name
+	created_at
+	faculty_id
+	updated_at(Column nai)
+	
+7. faculties:
+	id
+	name
+	created_at
+	updated_at(Column nai)
+	
+8. profiles:
+	id
+	email
+	full_name
+	role
+	department
+	semester
+	section
+	created_at
+	batch_initial
+	avater_url
+	phone
+	updated_at
+	batch
+	student_id
+	session_year
+	session_id
+	
+9. reports:
+	id
+	user_id
+	type
+	title
+	description
+	status
+	created_at
+	
+10. resources:
+	id
+	uploader_id
+	title
+	description
+	status
+	created_at
+	resource_type
+	department
+	semester
+	course_name
+	course_code
+	teacher_name
+	exam_type
+	tags
+	file_urls
+	session_id
+	
+11. semesters:
+	id
+	name
+	created_at
+	updated_at(Column nai)
