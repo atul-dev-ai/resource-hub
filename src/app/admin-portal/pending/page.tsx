@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { invalidateResourceCache } from "@/app/actions/resourceActions";
 
 export default function PendingUploadsPage() {
   const supabase = createClient();
@@ -47,6 +48,8 @@ export default function PendingUploadsPage() {
       const { error } = await supabase.from("resources").update({ status: "approved" }).eq("id", id);
       if (error) throw error;
       
+      await invalidateResourceCache();
+
       // Optimistic UI update: Remove from list instantly
       setPendingItems(prev => prev.filter(item => item.id !== id));
       toast.success("Resource Approved!", { id: loadingToast });
@@ -61,6 +64,8 @@ export default function PendingUploadsPage() {
       const { error } = await supabase.from("resources").update({ status: "rejected" }).eq("id", id);
       if (error) throw error;
       
+      await invalidateResourceCache();
+
       setPendingItems(prev => prev.filter(item => item.id !== id));
       toast.success("Resource Rejected.", { id: loadingToast });
     } catch (error: any) {
@@ -78,6 +83,8 @@ export default function PendingUploadsPage() {
       const { error } = await supabase.from("resources").delete().eq("id", id);
       if (error) throw error;
       
+      await invalidateResourceCache();
+
       setPendingItems(prev => prev.filter(item => item.id !== id));
       toast.success("Resource Deleted.", { id: loadingToast });
     } catch (error: any) {

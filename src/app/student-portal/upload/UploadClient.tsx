@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
+import imageCompression from "browser-image-compression";
 
 export default function UploadClient() {
   const supabase = createClient();
@@ -93,29 +94,50 @@ export default function UploadClient() {
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault(); setIsDragging(false);
-    if (e.dataTransfer.files) validateAndAddFiles(Array.from(e.dataTransfer.files));
+    if (e.dataTransfer.files) await validateAndAddFiles(Array.from(e.dataTransfer.files));
   };
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) validateAndAddFiles(Array.from(e.target.files));
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) await validateAndAddFiles(Array.from(e.target.files));
   };
 
-  const validateAndAddFiles = (selectedFiles: File[]) => {
+  const validateAndAddFiles = async (selectedFiles: File[]) => {
     const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-    const validFiles = selectedFiles.filter(file => {
+    
+    const processedFiles: File[] = [];
+    
+    for (const file of selectedFiles) {
       if (!validTypes.includes(file.type)) {
         toast.error(`Invalid file type: ${file.name}`);
-        return false;
+        continue;
       }
-      if (file.size > 10 * 1024 * 1024) { 
-        toast.error(`File too large (Max 10MB): ${file.name}`);
-        return false;
+      
+      let finalFile = file;
+      
+      if (file.type.startsWith("image/")) {
+        try {
+          const options = {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 1920,
+            useWebWorker: true
+          };
+          const compressedFile = await imageCompression(file, options);
+          finalFile = new File([compressedFile], file.name, { type: file.type });
+        } catch (error) {
+          console.error("Compression error:", error);
+        }
       }
-      return true;
-    });
+      
+      if (finalFile.size > 10 * 1024 * 1024) { 
+        toast.error(`File too large (Max 10MB): ${finalFile.name}`);
+        continue;
+      }
+      
+      processedFiles.push(finalFile);
+    }
 
-    setFiles(prev => [...prev, ...validFiles]);
+    setFiles(prev => [...prev, ...processedFiles]);
   };
 
   const removeFile = (index: number) => setFiles(prev => prev.filter((_, i) => i !== index));

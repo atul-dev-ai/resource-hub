@@ -102,7 +102,7 @@ export default function StudentDashboard() {
 
   // Map state to the UI stats structure
   const stats = [
-    { title: "Total Uploads", count: userStats.total.toString(), icon: FileText, color: "text-blue-600", bg: "bg-blue-100" },
+    { title: "Total Uploads", count: userStats.total.toString(), icon: FileText, color: "text-emerald-600", bg: "bg-emerald-100" },
     { title: "Approved", count: userStats.approved.toString(), icon: CheckCircle, color: "text-green-600", bg: "bg-green-100" },
     { title: "Pending", count: userStats.pending.toString(), icon: Clock, color: "text-orange-600", bg: "bg-orange-100" },
     { title: "Total Views", count: userStats.views.toString(), icon: Eye, color: "text-purple-600", bg: "bg-purple-100" },
@@ -116,20 +116,20 @@ export default function StudentDashboard() {
       className="max-w-7xl mx-auto space-y-8"
     >
       {/* Welcome Banner */}
-      <motion.div variants={itemVariants} className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+      <motion.div variants={itemVariants} className="bg-gradient-to-r from-emerald-800 to-emerald-950 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {userName}! 👋</h1>
-          <p className="text-blue-100 max-w-xl text-sm sm:text-base">
+          <p className="text-emerald-100 max-w-xl text-sm sm:text-base">
             Ready to ace your next exam? Check out the latest resources uploaded by your peers or contribute to the community by uploading your own notes.
           </p>
           <div className="mt-6 flex gap-4">
             <Link href="/student-portal/upload">
-              <button className="bg-white text-blue-600 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-50 transition shadow-sm cursor-pointer">
+              <button className="bg-white text-emerald-900 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-50 transition shadow-sm cursor-pointer">
                 Upload Resource
               </button>
             </Link>
             <Link href="/student-portal/resources">
-              <button className="bg-blue-500/30 text-white border border-blue-400/30 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-500/50 transition backdrop-blur-sm cursor-pointer hidden sm:block">
+              <button className="bg-emerald-500/30 text-white border border-emerald-400/30 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-500/50 transition backdrop-blur-sm cursor-pointer hidden sm:block">
                 Browse All
               </button>
             </Link>
@@ -158,7 +158,7 @@ export default function StudentDashboard() {
       <motion.div variants={itemVariants} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-800">Your Recent Uploads</h2>
-          <Link href="/student-portal/my-uploads" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+          <Link href="/student-portal/my-uploads" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 cursor-pointer">
             View All <ArrowRight size={16} />
           </Link>
         </div>
@@ -225,7 +225,7 @@ export default function StudentDashboard() {
                           href={fileUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex p-2 text-gray-400 hover:text-blue-600 bg-white border border-gray-200 hover:border-blue-200 rounded-lg transition-colors cursor-pointer shadow-sm"
+                          className="inline-flex p-2 text-gray-400 hover:text-emerald-600 bg-white border border-gray-200 hover:border-emerald-200 rounded-lg transition-colors cursor-pointer shadow-sm"
                         >
                           <Download size={18} />
                         </a>
@@ -238,7 +238,7 @@ export default function StudentDashboard() {
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     <FileText size={40} className="mx-auto mb-3 text-gray-300" />
                     <p className="font-medium">You haven't uploaded any resources yet.</p>
-                    <Link href="/student-portal/upload" className="text-blue-600 hover:underline text-sm mt-1 inline-block">
+                    <Link href="/student-portal/upload" className="text-emerald-600 hover:underline text-sm mt-1 inline-block">
                       Click here to upload your first resource.
                     </Link>
                   </td>

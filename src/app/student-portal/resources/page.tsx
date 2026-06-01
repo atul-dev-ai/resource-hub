@@ -8,47 +8,23 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
+import { getApprovedResources } from "@/app/actions/resourceActions";
 
 export default function ResourcesPage() {
   const supabase = createClient();
-  const [resources, setResources] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDept, setSelectedDept] = useState("All");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const departments = ["All", "CSE", "SWE", "CIS", "EEE", "BBA", "ENG", "PHR", "LAW"];
 
-  useEffect(() => {
-    fetchResources();
-  }, [selectedDept]);
+  const { data: allResources = [], isLoading: loading } = useQuery({
+    queryKey: ["approved_resources"],
+    queryFn: getApprovedResources,
+  });
 
-  const fetchResources = async () => {
-    try {
-      setLoading(true);
-      
-      // 1. Get user profile to auto-filter (Optional improvement)
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      let query = supabase
-        .from("resources")
-        .select(`*, profiles(full_name)`)
-        .eq("status", "approved"); // Shudhu approved resources dekhabe
-
-      if (selectedDept !== "All") {
-        query = query.eq("department", selectedDept);
-      }
-
-      const { data, error } = await query.order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setResources(data || []);
-    } catch (error: any) {
-      toast.error("Failed to load resources.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const resources = selectedDept === "All" ? allResources : allResources.filter(r => r.department === selectedDept);
 
   // Search Logic
   const filteredResources = resources.filter(res => 
