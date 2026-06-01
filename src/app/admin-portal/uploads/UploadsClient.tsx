@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { invalidateResourceCache } from "@/app/actions/resourceActions";
 
 export default function UploadsClient() {
   const supabase = createClient();
@@ -52,6 +53,8 @@ export default function UploadsClient() {
       const { error } = await supabase.from("resources").delete().eq("id", id);
       if (error) throw error;
       
+      await invalidateResourceCache();
+
       setResources(prev => prev.filter(res => res.id !== id));
       toast.success("Resource permanently removed.", { id: loadingToast });
     } catch (error: any) {

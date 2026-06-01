@@ -215,11 +215,12 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5">
-            <Link href="/student-portal/upload">
-              <button className="hidden sm:flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition duration-300 font-medium text-sm shadow-sm cursor-pointer">
-                <PlusCircle size={18} />
-                Quick Upload
-              </button>
+            <Link 
+              href="/student-portal/upload"
+              className="hidden sm:flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition duration-300 font-medium text-sm shadow-sm cursor-pointer"
+            >
+              <PlusCircle size={18} />
+              Quick Upload
             </Link>
 
             <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors cursor-pointer mr-1">
