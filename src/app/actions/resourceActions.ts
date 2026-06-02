@@ -3,20 +3,24 @@
 import { createClient } from "@/utils/supabase/server";
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
 const CACHE_KEY = "approved_resources";
 const CACHE_TTL = 60 * 60 * 24; // 24 hours in seconds
 
 export async function getApprovedResources() {
   let cachedResources = null;
+  let redis = null;
   
   try {
-    // 1. Try fetching from Redis cache
-    cachedResources = await redis.get(CACHE_KEY);
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+      // 1. Try fetching from Redis cache
+      cachedResources = await redis.get(CACHE_KEY);
+    } else {
+      console.warn("Redis credentials missing, bypassing cache");
+    }
   } catch (error) {
     console.error("Redis Cache Error:", error);
     // Continue to fetch from Supabase if Redis fails
@@ -47,7 +51,7 @@ export async function getApprovedResources() {
     console.log("Fetched from DB:", data?.length, "items.");
 
     // 3. Save to Redis cache
-    if (data) {
+    if (data && redis) {
       await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
     }
 
@@ -60,8 +64,14 @@ export async function getApprovedResources() {
 
 export async function invalidateResourceCache() {
   try {
-    await redis.del(CACHE_KEY);
-    console.log("Invalidated Redis resource cache");
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      const redis = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+      await redis.del(CACHE_KEY);
+      console.log("Invalidated Redis resource cache");
+    }
     return { success: true };
   } catch (error) {
     console.error("Failed to invalidate cache:", error);
