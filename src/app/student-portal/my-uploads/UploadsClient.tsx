@@ -330,14 +330,14 @@ export default function UploadsClient() {
                     className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Dept</option>
-                    {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
+                    {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={uploadData.semester} onChange={e => setUploadData({...uploadData, semester: e.target.value})}
                     className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Semester</option>
-                    {semesters.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
 
@@ -396,14 +396,14 @@ export default function UploadsClient() {
                     className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Dept</option>
-                    {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
+                    {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={editResource.semester || ""} onChange={e => setEditResource({...editResource, semester: e.target.value})}
                     className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Semester</option>
-                    {semesters.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
                 

@@ -115,7 +115,7 @@ export default function StudentDashboard() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {recentResources.length > 0 ? (
-                recentResources.map((item) => {
+                recentResources.map((item: any) => {
                   // File type detection
                   const fileUrls = Array.isArray(item.file_urls) ? item.file_urls : [item.file_urls];
                   const fileUrl = fileUrls[0] || "";
