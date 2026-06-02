@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion } from "framer-motion";
 import { 
   Bug, FileWarning, HelpCircle, Lightbulb, 
@@ -8,12 +9,15 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getStudentReports, invalidateStudentReports } from "@/app/actions/studentActions";
 
 export default function StudentReportsPage() {
   const supabase = createClient();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [userAuth, setUserAuth] = useState<any>(null);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [myReports, setMyReports] = useState<any[]>([]);
 
   // Form States
   const [type, setType] = useState("bug");
@@ -28,30 +32,16 @@ export default function StudentReportsPage() {
     { id: "other", name: "Other Issue", icon: HelpCircle }
   ];
 
+  const { data: myReportsData, isLoading: loading } = useQuery({
+    queryKey: ["student_reports"],
+    queryFn: getStudentReports,
+  });
+
+  const myReports = myReportsData || [];
+
   useEffect(() => {
-    fetchMyReports();
+    supabase.auth.getUser().then(({ data }) => setUserAuth(data?.user || null));
   }, []);
-
-  const fetchMyReports = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setMyReports(data || []);
-    } catch (error) {
-      toast.error("Failed to load your reports.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,11 +49,10 @@ export default function StudentReportsPage() {
     const loadingToast = toast.loading("Submitting your report...");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Please log in again.");
+      if (!userAuth) throw new Error("Please log in again.");
 
       const { data, error } = await supabase.from("reports").insert([{
-        user_id: user.id,
+        reporter_id: userAuth.id,
         type,
         title,
         description,
@@ -72,8 +61,10 @@ export default function StudentReportsPage() {
 
       if (error) throw error;
 
-      setMyReports([data, ...myReports]);
       setTitle(""); setDescription(""); setType("bug");
+      
+      await invalidateStudentReports(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_reports"] });
       
       toast.success("Report submitted successfully! Admins will review it soon.", { id: loadingToast });
     } catch (error: any) {
@@ -95,7 +86,7 @@ export default function StudentReportsPage() {
     return <Icon size={16} className="text-slate-500" />;
   };
 
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-[#5DCAA5] w-10 h-10" /></div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">

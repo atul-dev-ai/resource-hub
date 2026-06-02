@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Users, Filter, Eye, Trash2, Ban, UserCheck, 
@@ -107,7 +108,7 @@ export default function UsersClient() {
   });
 
   if (loading) {
-    return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-emerald-600" /></div>;
+    return <PageSkeleton />;
   }
 
   return (

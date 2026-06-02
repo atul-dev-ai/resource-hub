@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Filter, Eye, Download, FileType, Loader2, X, 
@@ -67,9 +68,7 @@ export default function ResourcesPage() {
 
       {/* Resource Grid */}
       {loading ? (
-        <div className="flex h-[40vh] items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-        </div>
+        <PageSkeleton />
       ) : filteredResources.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredResources.map((res) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion } from "framer-motion";
 import { 
   User, BookOpen, Hash, Camera, Save, Loader2, Calendar, Mail, ShieldCheck, Layers 
@@ -8,12 +9,14 @@ import {
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger"; // Activity tracker added
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getStudentProfile, invalidateStudentProfile } from "@/app/actions/studentActions";
 
 export default function ProfileClient() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [userAuth, setUserAuth] = useState<any>(null);
 
@@ -29,44 +32,35 @@ export default function ProfileClient() {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const hasChanges = JSON.stringify(profile) !== JSON.stringify(initialProfile) || selectedImageFile !== null;
+  const { data: profileData, isLoading: loading } = useQuery({
+    queryKey: ["student_profile"],
+    queryFn: getStudentProfile,
+  });
 
   useEffect(() => {
-    fetchProfile();
+    supabase.auth.getUser().then(({ data }) => setUserAuth(data?.user || null));
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw authError;
-      
-      setUserAuth(user);
-
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-      if (error) throw error;
-      
-      if (data) {
-        const profileData = {
-          full_name: data.full_name || "", 
-          phone: data.phone || "",
-          student_id: data.student_id || "", 
-          department: data.department || "",
-          semester: data.semester || "", 
-          section: data.section || "",
-          batch_initial: data.batch_initial || "", 
-          avatar_url: data.avatar_url || "",
-          role: data.role || "student", 
-          created_at: new Date(data.created_at).toLocaleDateString() || "Unknown"
-        };
-        setProfile(profileData);
-        setInitialProfile(profileData);
-      }
-    } catch (error: any) {
-      toast.error("Failed to load profile data.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (profileData && !initialProfile) {
+      const pData = {
+        full_name: profileData.full_name || "", 
+        phone: profileData.phone || "",
+        student_id: profileData.student_id || "", 
+        department: profileData.department || "",
+        semester: profileData.semester || "", 
+        section: profileData.section || "",
+        batch_initial: profileData.batch_initial || "", 
+        avatar_url: profileData.avatar_url || "",
+        role: profileData.role || "student", 
+        created_at: profileData.created_at ? new Date(profileData.created_at).toLocaleDateString() : "Unknown"
+      };
+      setProfile(pData);
+      setInitialProfile(pData);
     }
-  };
+  }, [profileData, initialProfile]);
+
+  const hasChanges = JSON.stringify(profile) !== JSON.stringify(initialProfile) || selectedImageFile !== null;
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -131,6 +125,10 @@ export default function ProfileClient() {
       setSelectedImageFile(null);
       setPreviewUrl(null);
 
+      // Invalidate cache
+      await invalidateStudentProfile(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_profile"] });
+
       toast.success("Profile updated successfully!", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile", { id: loadingToast });
@@ -140,7 +138,7 @@ export default function ProfileClient() {
   };
 
   if (loading) {
-    return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-[#5DCAA5]" /></div>;
+    return <PageSkeleton />;
   }
 
   const displayImage = previewUrl || profile.avatar_url;

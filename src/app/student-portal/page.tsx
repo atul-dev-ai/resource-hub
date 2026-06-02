@@ -7,8 +7,9 @@ import {
   ArrowRight, Download, FileType, CheckCircle2, Clock3 
 } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
 import PremiumLoading from "@/components/PremiumLoading";
+import { useQuery } from "@tanstack/react-query";
+import { getStudentDashboardData } from "@/app/actions/studentActions";
 
 // Animation Variants
 const containerVariants = {
@@ -25,76 +26,14 @@ const itemVariants = {
 };
 
 export default function StudentDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("Student");
-  const [userStats, setUserStats] = useState({
-    total: 0,
-    approved: 0,
-    pending: 0,
-    views: 0
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["student_dashboard"],
+    queryFn: getStudentDashboardData,
   });
-  const [recentResources, setRecentResources] = useState<any[]>([]);
-  const supabase = createClient();
 
-  useEffect(() => {
-    const fetchStudentData = async () => {
-      setLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
-
-        const userId = session.user.id;
-
-        // Fetch User Profile (For Name)
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", userId)
-          .single();
-
-        if (profile?.full_name) {
-          // Get first name only for friendly greeting
-          setUserName(profile.full_name.split(" ")[0]); 
-        }
-
-        // Fetch User's Uploaded Resources
-        const { data: resources, error } = await supabase
-          .from("resources")
-          .select("*")
-          .eq("uploader_id", userId)
-          .order("created_at", { ascending: false });
-
-        if (!error && resources) {
-          let approved = 0;
-          let pending = 0;
-          let views = 0;
-
-          resources.forEach(res => {
-            if (res.status === 'approved') approved++;
-            if (res.status === 'pending') pending++;
-            // If views_count exists in DB, add it, otherwise fallback to 0
-            views += res.views_count || 0; 
-          });
-
-          setUserStats({
-            total: resources.length,
-            approved,
-            pending,
-            views
-          });
-
-          // Set latest 5 resources for the table
-          setRecentResources(resources.slice(0, 5));
-        }
-      } catch (error) {
-        console.error("Error fetching student data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStudentData();
-  }, []);
+  const userName = data?.userName || "Student";
+  const userStats = data?.stats || { total: 0, approved: 0, pending: 0, views: 0 };
+  const recentResources = data?.recentResources || [];
 
   if (loading) {
     return <PremiumLoading />;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     AlertCircle, Bug, FileWarning, HelpCircle, Lightbulb,
@@ -89,7 +90,7 @@ export default function AdminReportsPage() {
         return <Clock size={16} className="text-orange-500" />;
     };
 
-    if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
+    if (loading) return <PageSkeleton />;
 
     return (
         <div className="space-y-6 relative">
