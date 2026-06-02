@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, BookOpen, FileText, Download, Tag, X, Eye, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getApprovedResources } from "@/app/actions/resourceActions";
 
 // Filter Options
@@ -30,6 +30,7 @@ export default function ResourcesSection() {
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const checkUserAndFetchData = async () => {
@@ -68,7 +69,7 @@ export default function ResourcesSection() {
 
   const { data: resources = [], isLoading } = useQuery({
     queryKey: ["approved_resources"],
-    queryFn: getApprovedResources,
+    queryFn: () => getApprovedResources(),
   });
 
   // --- View Tracking ---
@@ -84,6 +85,10 @@ export default function ResourcesSection() {
       const currentViews = data?.views_count || 0;
       
       await supabase.from('resources').update({ views_count: currentViews + 1 }).eq('id', resourceId);
+      queryClient.setQueryData(["approved_resources"], (old: any) => {
+        if (!old) return old;
+        return old.map((r: any) => r.id === resourceId ? { ...r, views_count: currentViews + 1 } : r);
+      });
     } catch (e) {
       console.error("View tracking failed");
     }
@@ -163,10 +168,10 @@ export default function ResourcesSection() {
 
       // Update UI State for votes locally via userVotes
       setUserVotes(newVotes);
-      // To update likes_count and dislikes_count optimistically, we'd need to mutate queryCache or not do it optimistically.
-      // For simplicity, we just rely on userVotes state for now, or just let it refetch if we invalidate.
-      // But we aren't invalidating here, so we might want to update the cached data.
-      // It's fine to leave it for now or implement full cache update later.
+      queryClient.setQueryData(["approved_resources"], (old: any) => {
+        if (!old) return old;
+        return old.map((r: any) => r.id === resourceId ? { ...r, likes_count: newLikes, dislikes_count: newDislikes } : r);
+      });
 
     } catch (error) {
       toast.error("Failed to register vote.");
