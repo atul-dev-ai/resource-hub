@@ -9,17 +9,15 @@ import {
 import toast from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import imageCompression from "browser-image-compression";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUploadMetadata, getStudentProfile, invalidateStudentUploads } from "@/app/actions/studentActions";
 
 export default function UploadClient() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Data Fetching States
-  const [loadingData, setLoadingData] = useState(true);
-  const [dbDepartments, setDbDepartments] = useState<any[]>([]);
-  const [dbSemesters, setDbSemesters] = useState<any[]>([]);
-  const [dbSessions, setDbSessions] = useState<any[]>([]);
-  const [dbCourses, setDbCourses] = useState<any[]>([]);
+  const queryClient = useQueryClient();
+  const [userAuth, setUserAuth] = useState<any>(null);
 
   // File & Form States
   const [files, setFiles] = useState<File[]>([]);
@@ -44,39 +42,37 @@ export default function UploadClient() {
   const resourceTypes = ["Previous Question", "Quiz", "Assignment", "Notes", "Lab Report", "Slide", "Others"];
   const examTypes = ["Mid", "Final", "Quiz", "Viva"];
 
+  const { data: meta, isLoading: loadingMeta } = useQuery({
+    queryKey: ["global_form_metadata"],
+    queryFn: getUploadMetadata,
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["student_profile"],
+    queryFn: getStudentProfile,
+  });
+
+  const loadingData = loadingMeta;
+  const dbDepartments = meta?.departments || [];
+  const dbSemesters = meta?.semesters || [];
+  const dbSessions = meta?.sessions || [];
+  const [dbCourses, setDbCourses] = useState<any[]>([]);
+
   useEffect(() => {
-    fetchAcademicData();
+    supabase.auth.getUser().then(({ data }) => setUserAuth(data?.user || null));
   }, []);
 
-  const fetchAcademicData = async () => {
-    setLoadingData(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Authentication error");
-
-      const [deptRes, semRes, sessionRes, courseRes, profileRes] = await Promise.all([
-        supabase.from("departments").select("code, name").order("code"),
-        supabase.from("semesters").select("id, name").order("created_at"),
-        supabase.from("academic_sessions").select("id, term, year, batch_code").eq("is_active", true).order("batch_code", { ascending: false }),
-        supabase.from("courses").select("*"),
-        supabase.from("profiles").select("department").eq("id", user.id).single()
-      ]);
-
-      setDbDepartments(deptRes.data || []);
-      setDbSemesters(semRes.data || []);
-      setDbSessions(sessionRes.data || []);
-      setDbCourses(courseRes.data || []);
-
-      if (profileRes.data?.department) {
-        setFormData(prev => ({ ...prev, department: profileRes.data.department }));
-      }
-
-    } catch (error) {
-      toast.error("Failed to load academic data. Please refresh.");
-    } finally {
-      setLoadingData(false);
+  useEffect(() => {
+    if (meta?.courses) {
+      setDbCourses(meta.courses);
     }
-  };
+  }, [meta?.courses]);
+
+  useEffect(() => {
+    if (profile?.department && !formData.department) {
+      setFormData(prev => ({ ...prev, department: profile.department }));
+    }
+  }, [profile?.department]);
 
   const handleCourseCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const code = e.target.value.toUpperCase();
@@ -163,8 +159,7 @@ export default function UploadClient() {
     const uploadedUrls: string[] = [];
 
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) throw new Error("Authentication failed! Please log in again.");
+      if (!userAuth) throw new Error("Authentication failed! Please log in again.");
 
       // 1. DYNAMIC COURSE SAVE LOGIC
       const courseExists = dbCourses.find(c => c.course_code.toUpperCase() === formData.courseCode.toUpperCase());
@@ -185,7 +180,7 @@ export default function UploadClient() {
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
         const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const filePath = `${user.id}/${Date.now()}-${cleanName}.${fileExt}`; // file path in bucket
+        const filePath = `${userAuth.id}/${Date.now()}-${cleanName}.${fileExt}`; // file path in bucket
         
         const { error: uploadError } = await supabase.storage.from("academic_resources").upload(filePath, file);
         if (uploadError) throw uploadError;
@@ -201,7 +196,7 @@ export default function UploadClient() {
 
       // 3. SAVE RESOURCE METADATA (DATABASE)
       const { error: dbError } = await supabase.from("resources").insert([{
-        uploader_id: user.id,
+        uploader_id: userAuth.id,
         title: formData.title,
         description: formData.description,
         resource_type: formData.resourceType,
@@ -220,6 +215,12 @@ export default function UploadClient() {
       if (dbError) throw dbError; // এটা ফেইল করলে সরাসরি catch ব্লকে চলে যাবে
 
       localStorage.setItem("lastUploadTimestamp", Date.now().toString());
+      
+      // Invalidate uploads cache
+      await invalidateStudentUploads(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["student_dashboard"] });
+
       toast.success("Resource submitted for admin review!", { id: loadingToast, duration: 5000 });
       
       setFiles([]);
@@ -312,7 +313,7 @@ export default function UploadClient() {
                 className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl outline-none appearance-none cursor-not-allowed text-gray-500 font-medium"
               >
                 <option value="" disabled>Loading Dept...</option>
-                {dbDepartments.map(d => <option key={d.code} value={d.code}>{d.code} - {d.name}</option>)}
+                {dbDepartments.map((d: any) => <option key={d.code} value={d.code}>{d.code} - {d.name}</option>)}
               </select>
             </div>
             
@@ -320,7 +321,7 @@ export default function UploadClient() {
               <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Semester <span className="text-red-500">*</span></label>
               <select required value={formData.semester} onChange={e => setFormData({...formData, semester: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer text-gray-700">
                 <option value="" disabled>Select Sem</option>
-                {dbSemesters.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                {dbSemesters.map((s: any) => <option key={s.name} value={s.name}>{s.name}</option>)}
               </select>
             </div>
             
@@ -335,7 +336,7 @@ export default function UploadClient() {
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase text-gray-800" 
                 />
                 <datalist id="courseCodesList">
-                  {filteredCourses.map(c => <option key={c.id} value={c.course_code}>{c.course_name}</option>)}
+                  {filteredCourses.map((c: any) => <option key={c.id} value={c.course_code}>{c.course_name}</option>)}
                 </datalist>
               </div>
             </div>
@@ -351,7 +352,7 @@ export default function UploadClient() {
                   className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-800" 
                 />
                 <datalist id="courseNamesList">
-                  {filteredCourses.map(c => <option key={c.id} value={c.course_name} />)}
+                  {filteredCourses.map((c: any) => <option key={c.id} value={c.course_name} />)}
                 </datalist>
               </div>
             </div>
@@ -370,7 +371,7 @@ export default function UploadClient() {
                 <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <select required value={formData.sessionId} onChange={e => setFormData({...formData, sessionId: e.target.value})} className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer text-gray-700">
                   <option value="" disabled>Select Batch</option>
-                  {dbSessions.map(s => <option key={s.id} value={s.id}>Batch {s.batch_code} ({s.term} {s.year})</option>)}
+                  {dbSessions.map((s: any) => <option key={s.id} value={s.id}>Batch {s.batch_code} ({s.term} {s.year})</option>)}
                 </select>
               </div>
             </div>
@@ -381,7 +382,7 @@ export default function UploadClient() {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2 mt-2">Exam Type <span className="text-red-500">*</span></label>
                   <select required value={formData.examType} onChange={e => setFormData({...formData, examType: e.target.value})} className="w-full px-4 py-3 bg-indigo-50/50 border border-indigo-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer text-gray-700">
                     <option value="" disabled>Select Exam Type</option>
-                    {examTypes.map(e => <option key={e} value={e}>{e}</option>)}
+                    {examTypes.map((e: any) => <option key={e} value={e}>{e}</option>)}
                   </select>
                 </motion.div>
               )}

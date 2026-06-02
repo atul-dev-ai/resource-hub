@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion } from "framer-motion";
 import { 
   Megaphone, Pin, Trash2, Loader2, 
@@ -102,7 +103,7 @@ export default function AnnouncementsPage() {
     return { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", icon: <Info size={18} className="text-blue-600" /> };
   };
 
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6 pb-10">

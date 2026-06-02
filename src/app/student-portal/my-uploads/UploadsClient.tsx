@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Upload, FileText, Trash2, Loader2, 
@@ -13,19 +14,19 @@ import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import imageCompression from "browser-image-compression";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUploadMetadata, getStudentUploads, invalidateStudentUploads } from "@/app/actions/studentActions";
 
 export default function UploadsClient() {
   const supabase = createClient();
   
-  // Data States
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [myFiles, setMyFiles] = useState<any[]>([]);
+  const queryClient = useQueryClient();
+  const [userAuth, setUserAuth] = useState<any>(null);
   
-  // Dropdown Data
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [semesters, setSemesters] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
+  // Data States
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+
   
   // Form States for Upload
   const [showModal, setShowModal] = useState(false);
@@ -46,33 +47,25 @@ export default function UploadsClient() {
   // Security: Rate Limiting state
   const [lastUploadTime, setLastUploadTime] = useState(0);
 
+  const { data: meta, isLoading: loadingMeta } = useQuery({
+    queryKey: ["global_form_metadata"],
+    queryFn: getUploadMetadata,
+  });
+
+  const { data: uploadsData, isLoading: loadingUploads } = useQuery({
+    queryKey: ["student_uploads"],
+    queryFn: getStudentUploads,
+  });
+
+  const loading = loadingMeta || loadingUploads;
+  const myFiles = uploadsData || [];
+  const departments = meta?.departments || [];
+  const semesters = meta?.semesters || [];
+  const sessions = meta?.sessions || [];
+
   useEffect(() => {
-    fetchInitialData();
+    supabase.auth.getUser().then(({ data }) => setUserAuth(data?.user || null));
   }, []);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [deptRes, semRes, sessionRes, fileRes] = await Promise.all([
-        supabase.from("departments").select("*").order("code"),
-        supabase.from("semesters").select("*").order("created_at"),
-        supabase.from("academic_sessions").select("*").order("year", { ascending: false }),
-        supabase.from("resources").select("*").eq("uploader_id", user.id).order("created_at", { ascending: false })
-      ]);
-
-      setDepartments(deptRes.data || []);
-      setSemesters(semRes.data || []);
-      setSessions(sessionRes.data || []);
-      setMyFiles(fileRes.data || []);
-    } catch (error) {
-      toast.error("Failed to load portal data.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,10 +83,9 @@ export default function UploadsClient() {
     const loadingToast = toast.loading("Processing secure upload...");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Session expired.");
+      if (!userAuth) throw new Error("Session expired.");
 
-      const fileName = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const fileName = `${userAuth.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const { data: storageData, error: storageError } = await supabase.storage
         .from("academic_resources")
         .upload(fileName, file);
@@ -109,16 +101,19 @@ export default function UploadsClient() {
         semester: uploadData.semester,
         course_code: uploadData.course || null,
         session_id: uploadData.sessionId || null,
-        uploader_id: user.id,
+        uploader_id: userAuth.id,
         status: 'pending'
       }]).select().single();
 
       if (dbError) throw dbError;
 
-      setMyFiles([data, ...myFiles]);
       setLastUploadTime(Date.now());
       setShowModal(false);
       resetForm();
+
+      await invalidateStudentUploads(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["student_dashboard"] });
       
       await logActivity("FILE_UPLOAD", `Uploaded file: ${uploadData.title}`);
       toast.success("File uploaded! It will be visible after admin approval.", { id: loadingToast });
@@ -138,8 +133,7 @@ export default function UploadsClient() {
     const loadingToast = toast.loading("Updating resource...");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Session expired.");
+      if (!userAuth) throw new Error("Session expired.");
 
       let newPublicUrl = editResource.file_urls?.[0];
 
@@ -156,7 +150,7 @@ export default function UploadsClient() {
           } catch (e) { console.error(e); }
         }
 
-        const fileName = `${user.id}/${Date.now()}-${finalFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const fileName = `${userAuth.id}/${Date.now()}-${finalFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const { data: storageData, error: storageError } = await supabase.storage
           .from("academic_resources")
           .upload(fileName, finalFile);
@@ -184,9 +178,12 @@ export default function UploadsClient() {
 
       if (error) throw error;
 
-      setMyFiles(myFiles.map(f => f.id === editResource.id ? { ...f, ...updateData } : f));
       setShowEditModal(false);
       setEditFile(null);
+
+      await invalidateStudentUploads(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_uploads"] });
+      
       toast.success("Resource updated successfully!", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message || "Failed to update resource.", { id: loadingToast });
@@ -203,7 +200,10 @@ export default function UploadsClient() {
       const { error } = await supabase.from("resources").delete().eq("id", id);
       if (error) throw error;
 
-      setMyFiles(myFiles.filter(f => f.id !== id));
+      await invalidateStudentUploads(userAuth.id);
+      queryClient.invalidateQueries({ queryKey: ["student_uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["student_dashboard"] });
+
       toast.success("Resource deleted.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete resource.", { id: loadingToast });
@@ -215,7 +215,7 @@ export default function UploadsClient() {
     setFile(null);
   };
 
-  if (loading) return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="animate-spin text-[#5DCAA5]" size={40} /></div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8 text-[#ecfdf5]">
@@ -330,14 +330,14 @@ export default function UploadsClient() {
                     className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Dept</option>
-                    {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
+                    {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={uploadData.semester} onChange={e => setUploadData({...uploadData, semester: e.target.value})}
                     className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Semester</option>
-                    {semesters.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
 
@@ -396,14 +396,14 @@ export default function UploadsClient() {
                     className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Dept</option>
-                    {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
+                    {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={editResource.semester || ""} onChange={e => setEditResource({...editResource, semester: e.target.value})}
                     className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
                   >
                     <option value="">Semester</option>
-                    {semesters.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                    {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
                 

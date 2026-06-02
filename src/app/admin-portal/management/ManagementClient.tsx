@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { ShieldCheck, UserCog, Search, Loader2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
@@ -59,7 +60,7 @@ export default function ManagementClient() {
     a.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-red-600 w-10 h-10" /></div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6">

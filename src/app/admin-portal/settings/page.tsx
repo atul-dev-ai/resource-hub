@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Lock, Mail, ShieldCheck, Save, 
@@ -130,7 +131,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
+  if (loading) return <PageSkeleton />;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-10">
