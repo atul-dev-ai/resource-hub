@@ -52,7 +52,9 @@ export async function getApprovedResources() {
 
     // 3. Save to Redis cache
     if (data && redis) {
-      await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
+      try {
+        await redis.set(CACHE_KEY, data, { ex: CACHE_TTL });
+      } catch(e) {}
     }
 
     return data || [];
@@ -69,8 +71,10 @@ export async function invalidateResourceCache() {
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
-      await redis.del(CACHE_KEY);
-      console.log("Invalidated Redis resource cache");
+      try {
+        await redis.del(CACHE_KEY);
+        console.log("Invalidated Redis resource cache");
+      } catch(e) {}
     }
     return { success: true };
   } catch (error) {
