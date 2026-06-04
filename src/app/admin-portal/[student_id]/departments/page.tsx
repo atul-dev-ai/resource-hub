@@ -10,19 +10,25 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAcademicStructureData, invalidateAcademicStructure } from "@/app/actions/adminActions";
 
 export default function AcademicStructurePage() {
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"sessions" | "faculties" | "departments" | "courses">("sessions");
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Data States
-  const [faculties, setFaculties] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const { data: acdData, isLoading: loading } = useQuery({
+    queryKey: ["admin_academic_structure"],
+    queryFn: getAcademicStructureData,
+  });
+
+  const faculties = acdData?.faculties || [];
+  const departments = acdData?.departments || [];
+  const courses = acdData?.courses || [];
+  const sessions = acdData?.sessions || [];
 
   // Filter States
   const [filterDeptFaculty, setFilterDeptFaculty] = useState("");
@@ -51,32 +57,12 @@ export default function AcademicStructurePage() {
   const termOptions = ["Spring", "Summer", "Fall", "Short"];
 
   useEffect(() => {
-    fetchData();
-  }, [activeTab]);
-
-  useEffect(() => {
     setSearchTerm("");
   }, [activeTab]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [facRes, deptRes, courseRes, sessionRes] = await Promise.all([
-        supabase.from("faculties").select("*").order("name"),
-        supabase.from("departments").select("*, faculties(name)").order("code"),
-        supabase.from("courses").select("*").order("semester"),
-        supabase.from("academic_sessions").select("*").order("year", { ascending: false })
-      ]);
-
-      setFaculties(facRes.data || []);
-      setDepartments(deptRes.data || []);
-      setCourses(courseRes.data || []);
-      setSessions(sessionRes.data || []);
-    } catch (error) {
-      toast.error("Failed to load academic data.");
-    } finally {
-      setLoading(false);
-    }
+  const refreshData = async () => {
+    await invalidateAcademicStructure();
+    queryClient.invalidateQueries({ queryKey: ["admin_academic_structure"] });
   };
 
   // Cancel Handlers
@@ -150,23 +136,25 @@ export default function AcademicStructurePage() {
       const generatedBatchCode = `${shortYear}${termCode}`;
 
       if (editingSessionId) {
-        const { data, error } = await supabase.from("academic_sessions").update({
+        const { error } = await supabase.from("academic_sessions").update({
           term: newSessionTerm,
           year: parseInt(newSessionYear),
           batch_code: generatedBatchCode
-        }).eq("id", editingSessionId).select().single();
+        }).eq("id", editingSessionId);
         if (error) throw error;
-        setSessions(sessions.map(s => s.id === editingSessionId ? data : s).sort((a, b) => b.year - a.year));
+        
+        await refreshData();
         toast.success(`Session updated! Batch code: ${generatedBatchCode}`);
         cancelEditSession();
       } else {
-        const { data, error } = await supabase.from("academic_sessions").insert([{ 
+        const { error } = await supabase.from("academic_sessions").insert([{ 
           term: newSessionTerm, 
           year: parseInt(newSessionYear),
           batch_code: generatedBatchCode
-        }]).select().single();
+        }]);
         if (error) throw error;
-        setSessions([data, ...sessions].sort((a, b) => b.year - a.year));
+        
+        await refreshData();
         await logActivity("CREATE_SESSION", `Added Session: ${newSessionTerm} ${newSessionYear} (Batch ${generatedBatchCode})`);
         toast.success(`Session added! Batch code: ${generatedBatchCode}`);
         setNewSessionYear(new Date().getFullYear().toString());
@@ -183,7 +171,8 @@ export default function AcademicStructurePage() {
     try {
       const { error } = await supabase.from("academic_sessions").delete().eq("id", id);
       if (error) throw error;
-      setSessions(sessions.filter(s => s.id !== id));
+      
+      await refreshData();
       await logActivity("DELETE_SESSION", `Deleted Session with Batch ${batchCode}`);
       toast.success("Session deleted.");
     } catch (error: any) {
@@ -197,15 +186,17 @@ export default function AcademicStructurePage() {
     setIsSubmitting(true);
     try {
       if (editingFacultyId) {
-        const { data, error } = await supabase.from("faculties").update({ name: newFacultyName }).eq("id", editingFacultyId).select().single();
+        const { error } = await supabase.from("faculties").update({ name: newFacultyName }).eq("id", editingFacultyId);
         if (error) throw error;
-        setFaculties(faculties.map(f => f.id === editingFacultyId ? data : f).sort((a, b) => a.name.localeCompare(b.name)));
+        
+        await refreshData();
         toast.success("Faculty updated successfully!");
         cancelEditFaculty();
       } else {
         const { data, error } = await supabase.from("faculties").insert([{ name: newFacultyName }]).select().single();
         if (error) throw error;
-        setFaculties([...faculties, data].sort((a, b) => a.name.localeCompare(b.name)));
+        
+        await refreshData();
         setNewFacultyName("");
         await logActivity("CREATE_FACULTY", `Added Faculty: ${data.name}`);
         toast.success("Faculty added successfully!");
@@ -222,7 +213,8 @@ export default function AcademicStructurePage() {
     try {
       const { error } = await supabase.from("faculties").delete().eq("id", id);
       if (error) throw error;
-      setFaculties(faculties.filter(f => f.id !== id));
+      
+      await refreshData();
       await logActivity("DELETE_FACULTY", `Deleted Faculty: ${name}`);
       toast.success("Faculty deleted.");
     } catch (error: any) {
@@ -238,19 +230,21 @@ export default function AcademicStructurePage() {
     try {
       const code = newDeptCode.toUpperCase().trim();
       if (editingDeptId) {
-        const { data, error } = await supabase.from("departments").update({ 
+        const { error } = await supabase.from("departments").update({ 
           code, name: newDeptName, faculty_id: newDeptFacultyId 
-        }).eq("id", editingDeptId).select("*, faculties(name)").single();
+        }).eq("id", editingDeptId);
         if (error) throw error;
-        setDepartments(departments.map(d => d.id === editingDeptId ? data : d).sort((a, b) => a.code.localeCompare(b.code)));
+        
+        await refreshData();
         toast.success("Department updated!");
         cancelEditDept();
       } else {
-        const { data, error } = await supabase.from("departments").insert([{ 
+        const { error } = await supabase.from("departments").insert([{ 
           code, name: newDeptName, faculty_id: newDeptFacultyId 
-        }]).select("*, faculties(name)").single();
+        }]);
         if (error) throw error;
-        setDepartments([...departments, data].sort((a, b) => a.code.localeCompare(b.code)));
+        
+        await refreshData();
         setNewDeptCode(""); setNewDeptName(""); setNewDeptFacultyId("");
         await logActivity("CREATE_DEPT", `Added Dept: ${code}`);
         toast.success("Department added!");
@@ -267,7 +261,8 @@ export default function AcademicStructurePage() {
     try {
       const { error } = await supabase.from("departments").delete().eq("id", id);
       if (error) throw error;
-      setDepartments(departments.filter(d => d.id !== id));
+      
+      await refreshData();
       await logActivity("DELETE_DEPT", `Deleted Department: ${code}`);
       toast.success("Department deleted.");
     } catch (error: any) {
@@ -282,19 +277,21 @@ export default function AcademicStructurePage() {
     try {
       const code = newCourseCode.toUpperCase().trim();
       if (editingCourseId) {
-        const { data, error } = await supabase.from("courses").update({ 
+        const { error } = await supabase.from("courses").update({ 
           department_code: newCourseDept, semester: newCourseSem, course_code: code, course_name: newCourseName
-        }).eq("id", editingCourseId).select().single();
+        }).eq("id", editingCourseId);
         if (error) throw error;
-        setCourses(courses.map(c => c.id === editingCourseId ? data : c));
+        
+        await refreshData();
         toast.success("Course updated!");
         cancelEditCourse();
       } else {
-        const { data, error } = await supabase.from("courses").insert([{ 
+        const { error } = await supabase.from("courses").insert([{ 
           department_code: newCourseDept, semester: newCourseSem, course_code: code, course_name: newCourseName
-        }]).select().single();
+        }]);
         if (error) throw error;
-        setCourses([...courses, data]);
+        
+        await refreshData();
         setNewCourseCode(""); setNewCourseName("");
         await logActivity("CREATE_COURSE", `Added Course: ${code}`);
         toast.success("Course added!");
@@ -311,7 +308,8 @@ export default function AcademicStructurePage() {
     try {
       const { error } = await supabase.from("courses").delete().eq("id", id);
       if (error) throw error;
-      setCourses(courses.filter(c => c.id !== id));
+      
+      await refreshData();
       await logActivity("DELETE_COURSE", `Deleted Course: ${code}`);
       toast.success("Course deleted.");
     } catch (error: any) {
@@ -320,13 +318,13 @@ export default function AcademicStructurePage() {
   };
 
   // ================= FILTERS LOGIC =================
-  const filteredDepartments = departments.filter(d => {
+  const filteredDepartments = departments.filter((d: any) => {
     const matchesSearch = d.code.toLowerCase().includes(searchTerm.toLowerCase()) || d.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFaculty = filterDeptFaculty ? d.faculty_id === filterDeptFaculty : true;
     return matchesSearch && matchesFaculty;
   });
 
-  const filteredCourses = courses.filter(c => {
+  const filteredCourses = courses.filter((c: any) => {
     const matchesSearch = c.course_code.toLowerCase().includes(searchTerm.toLowerCase()) || c.course_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = filterCourseDept ? c.department_code === filterCourseDept : true;
     const matchesSem = filterCourseSem ? c.semester === filterCourseSem : true;
@@ -392,7 +390,7 @@ export default function AcademicStructurePage() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100"><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-4">Academic Term</th><th className="px-8 py-4">System Batch Code</th><th className="px-8 py-4 text-right">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {sessions.map(s => (
+                  {sessions.map((s: any) => (
                     <tr key={s.id} className={`hover:bg-slate-50 transition-colors ${editingSessionId === s.id ? 'bg-indigo-50/50' : ''}`}>
                       <td className="px-8 py-5 font-bold text-slate-700">{s.term} {s.year}</td>
                       <td className="px-8 py-5"><span className="text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 font-black">Batch {s.batch_code}</span></td>
@@ -434,7 +432,7 @@ export default function AcademicStructurePage() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100"><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-4">Faculty Name</th><th className="px-8 py-4 text-right">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {faculties.map(f => (
+                  {faculties.map((f: any) => (
                     <tr key={f.id} className={`hover:bg-slate-50 transition-colors ${editingFacultyId === f.id ? 'bg-emerald-50/30' : ''}`}>
                       <td className="px-8 py-5 font-bold text-slate-700">{f.name}</td>
                       <td className="px-8 py-5 text-right flex justify-end gap-2">
@@ -467,7 +465,7 @@ export default function AcademicStructurePage() {
               <form onSubmit={handleSaveDepartment} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <select required value={newDeptFacultyId} onChange={e => setNewDeptFacultyId(e.target.value)} className="px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-inner">
                   <option value="">Select Faculty</option>
-                  {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                  {faculties.map((f: any) => <option key={f.id} value={f.id}>{f.name}</option>)}
                 </select>
                 <input type="text" placeholder="Dept Code (CSE)" required value={newDeptCode} onChange={e => setNewDeptCode(e.target.value)} className="px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 uppercase outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner" />
                 <input type="text" placeholder="Full Dept Name" required value={newDeptName} onChange={e => setNewDeptName(e.target.value)} className="px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner lg:col-span-1" />
@@ -486,14 +484,14 @@ export default function AcademicStructurePage() {
                  </div>
                  <select value={filterDeptFaculty} onChange={e => setFilterDeptFaculty(e.target.value)} className="w-full sm:w-64 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none cursor-pointer">
                    <option value="">All Faculties</option>
-                   {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                   {faculties.map((f: any) => <option key={f.id} value={f.id}>{f.name}</option>)}
                  </select>
                </div>
 
                <table className="w-full text-left">
                   <thead className="bg-slate-50 border-b border-slate-100"><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-4">Hierarchy</th><th className="px-8 py-4">Dept Name</th><th className="px-8 py-4 text-right">Actions</th></tr></thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredDepartments.map(d => (
+                    {filteredDepartments.map((d: any) => (
                       <tr key={d.id} className={`hover:bg-slate-50 ${editingDeptId === d.id ? 'bg-emerald-50/30' : ''}`}>
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-2 text-xs font-bold">
@@ -534,7 +532,7 @@ export default function AcademicStructurePage() {
               <form onSubmit={handleSaveCourse} className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <select required value={newCourseDept} onChange={e => setNewCourseDept(e.target.value)} className="px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 shadow-inner outline-none cursor-pointer">
                   <option value="">Select Dept</option>
-                  {departments.map(d => <option key={d.id} value={d.code}>{d.code}</option>)}
+                  {departments.map((d: any) => <option key={d.id} value={d.code}>{d.code}</option>)}
                 </select>
                 <select required value={newCourseSem} onChange={e => setNewCourseSem(e.target.value)} className="px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 shadow-inner outline-none cursor-pointer">
                   <option value="">Semester</option>
@@ -558,7 +556,7 @@ export default function AcademicStructurePage() {
                  <div className="flex gap-2">
                    <select value={filterCourseDept} onChange={e => setFilterCourseDept(e.target.value)} className="w-full sm:w-40 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none cursor-pointer">
                      <option value="">All Depts</option>
-                     {departments.map(d => <option key={d.id} value={d.code}>{d.code}</option>)}
+                     {departments.map((d: any) => <option key={d.id} value={d.code}>{d.code}</option>)}
                    </select>
                    <select value={filterCourseSem} onChange={e => setFilterCourseSem(e.target.value)} className="w-full sm:w-40 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none cursor-pointer">
                      <option value="">All Semesters</option>
@@ -570,7 +568,7 @@ export default function AcademicStructurePage() {
                <table className="w-full text-left">
                   <thead className="bg-slate-50 border-b border-slate-100"><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="px-8 py-4">Dept</th><th className="px-8 py-4">Sem</th><th className="px-8 py-4">Code</th><th className="px-8 py-4">Course Name</th><th className="px-8 py-4 text-right">Actions</th></tr></thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredCourses.map(c => (
+                    {filteredCourses.map((c: any) => (
                       <tr key={c.id} className={`hover:bg-slate-50 ${editingCourseId === c.id ? 'bg-indigo-50/50' : ''}`}>
                         <td className="px-8 py-5 font-black text-indigo-700">{c.department_code}</td>
                         <td className="px-8 py-5 text-slate-500 font-bold">{c.semester}</td>

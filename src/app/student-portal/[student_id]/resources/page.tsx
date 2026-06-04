@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -111,12 +112,12 @@ export default function ResourcesPage() {
 
               {/* Action Buttons */}
               <div className="mt-6 pt-4 border-t border-gray-50 flex gap-3">
-                <button 
-                  onClick={() => setPreviewUrl(res.file_urls?.[0])}
+                <Link 
+                  href={`/resource/${res.id}`}
                   className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-black transition-colors cursor-pointer"
                 >
-                  <Eye size={16} /> Preview
-                </button>
+                  <Eye size={16} /> View Details
+                </Link>
                 <a 
                   href={res.file_urls?.[0]} 
                   download 
@@ -135,34 +136,6 @@ export default function ResourcesPage() {
           <p className="text-gray-500">Try adjusting your search or department filter.</p>
         </div>
       )}
-
-      {/* FULL SCREEN MODAL PREVIEW */}
-      <AnimatePresence>
-        {previewUrl && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-5xl h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col"
-            >
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                  <FileType size={18} className="text-blue-600" /> Document Preview
-                </h3>
-                <button onClick={() => setPreviewUrl(null)} className="p-2 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded-full transition-all cursor-pointer">
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="flex-1 bg-gray-100">
-                <iframe src={previewUrl} className="w-full h-full border-none" />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
     </motion.div>
   );
 }

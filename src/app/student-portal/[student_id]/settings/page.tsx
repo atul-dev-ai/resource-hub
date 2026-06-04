@@ -8,8 +8,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { useParams } from "next/navigation";
 
 export default function SettingsPage() {
+  const params = useParams();
+  const student_id = params?.student_id || '';
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -24,7 +27,7 @@ export default function SettingsPage() {
     setLoading(true);
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/student-portal/settings?update=true`,
+      redirectTo: `${window.location.origin}/student-portal/${student_id}/settings?update=true`,
     });
 
     if (error) {

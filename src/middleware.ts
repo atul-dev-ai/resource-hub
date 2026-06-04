@@ -38,6 +38,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Redirect /student-portal/dashboard to /student-portal
+  if (request.nextUrl.pathname === '/student-portal/dashboard' || request.nextUrl.pathname === '/admin-portal/dashboard') {
+    return NextResponse.redirect(new URL(request.nextUrl.pathname.replace('/dashboard', ''), request.url))
+  }
+
   // Optional: Redirect authenticated users away from login/signup pages
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup');
   if (isAuthRoute && user) {

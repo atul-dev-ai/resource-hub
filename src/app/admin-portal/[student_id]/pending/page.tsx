@@ -9,36 +9,20 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { invalidateResourceCache } from "@/app/actions/resourceActions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getPendingResources, invalidatePendingResources } from "@/app/actions/adminActions";
 
 export default function PendingUploadsPage() {
   const supabase = createClient();
-  const [pendingItems, setPendingItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPendingUploads();
-  }, []);
+  const { data: pendingData, isLoading: loading } = useQuery({
+    queryKey: ["admin_pending_resources"],
+    queryFn: getPendingResources,
+  });
 
-  const fetchPendingUploads = async () => {
-    try {
-      setLoading(true);
-      // Fetch resources with 'pending' status and join with profiles to get uploader's name
-      const { data, error } = await supabase
-        .from("resources")
-        .select(`*, profiles(full_name)`)
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setPendingItems(data || []);
-    } catch (error: any) {
-      toast.error("Failed to fetch pending uploads.");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const pendingItems = pendingData || [];
 
   // ================= ACTION HANDLERS =================
   
@@ -49,9 +33,10 @@ export default function PendingUploadsPage() {
       if (error) throw error;
       
       await invalidateResourceCache();
+      await invalidatePendingResources();
 
       // Optimistic UI update: Remove from list instantly
-      setPendingItems(prev => prev.filter(item => item.id !== id));
+      queryClient.setQueryData(["admin_pending_resources"], (old: any) => old?.filter((item: any) => item.id !== id));
       toast.success("Resource Approved!", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
@@ -65,8 +50,9 @@ export default function PendingUploadsPage() {
       if (error) throw error;
       
       await invalidateResourceCache();
+      await invalidatePendingResources();
 
-      setPendingItems(prev => prev.filter(item => item.id !== id));
+      queryClient.setQueryData(["admin_pending_resources"], (old: any) => old?.filter((item: any) => item.id !== id));
       toast.success("Resource Rejected.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
@@ -84,8 +70,9 @@ export default function PendingUploadsPage() {
       if (error) throw error;
       
       await invalidateResourceCache();
+      await invalidatePendingResources();
 
-      setPendingItems(prev => prev.filter(item => item.id !== id));
+      queryClient.setQueryData(["admin_pending_resources"], (old: any) => old?.filter((item: any) => item.id !== id));
       toast.success("Resource Deleted.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
@@ -246,8 +233,14 @@ export default function PendingUploadsPage() {
                   <XCircle size={24} />
                 </button>
               </div>
-              <div className="flex-1 bg-slate-200">
-                <iframe src={previewUrl} className="w-full h-full border-none" />
+              <div className="flex-1 bg-slate-200 overflow-auto relative">
+                {previewUrl.toLowerCase().includes('.pdf') ? (
+                  <iframe src={previewUrl} className="w-full h-full border-none" />
+                ) : (
+                  <div className="w-full min-h-full flex items-start justify-center bg-slate-900 p-4 sm:p-8">
+                    <img src={previewUrl} alt="Document Preview" className="max-w-full h-auto object-contain shadow-2xl rounded-lg" />
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

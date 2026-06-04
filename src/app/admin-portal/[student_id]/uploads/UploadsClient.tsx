@@ -9,38 +9,24 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { invalidateResourceCache } from "@/app/actions/resourceActions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAllAdminResources, invalidateAllAdminResources } from "@/app/actions/adminActions";
 
 export default function UploadsClient() {
   const supabase = createClient();
-  const [resources, setResources] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const { data: resourcesData, isLoading: loading } = useQuery({
+    queryKey: ["admin_all_resources"],
+    queryFn: getAllAdminResources,
+  });
+  const resources = resourcesData || [];
+
   const departments = ["CSE", "SWE", "CIS", "EEE", "BBA", "ENG", "PHR", "LAW"];
-
-  useEffect(() => {
-    fetchAllResources();
-  }, []);
-
-  const fetchAllResources = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("resources")
-        .select(`*, profiles(full_name)`)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setResources(data || []);
-    } catch (error: any) {
-      toast.error("Failed to load resources.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     const confirmDelete = window.confirm(
@@ -54,8 +40,8 @@ export default function UploadsClient() {
       if (error) throw error;
       
       await invalidateResourceCache();
-
-      setResources(prev => prev.filter(res => res.id !== id));
+      await invalidateAllAdminResources();
+      queryClient.setQueryData(["admin_all_resources"], (old: any) => old?.filter((res: any) => res.id !== id));
       toast.success("Resource permanently removed.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
@@ -218,7 +204,15 @@ export default function UploadsClient() {
                 <h3 className="font-bold text-slate-800">Admin Document Viewer</h3>
                 <button onClick={() => setPreviewUrl(null)} className="p-2 hover:bg-red-50 text-red-500 rounded-full cursor-pointer"><X size={20}/></button>
               </div>
-              <iframe src={previewUrl} className="flex-1 w-full border-none bg-slate-100" />
+              <div className="flex-1 bg-slate-200 overflow-auto relative">
+                {previewUrl.toLowerCase().includes('.pdf') ? (
+                  <iframe src={previewUrl} className="w-full h-full border-none" />
+                ) : (
+                  <div className="w-full min-h-full flex items-start justify-center bg-slate-900 p-4 sm:p-8">
+                    <img src={previewUrl} alt="Document Preview" className="max-w-full h-auto object-contain shadow-2xl rounded-lg" />
+                  </div>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -5,11 +5,15 @@ import { Redis } from "@upstash/redis";
 
 // Helper to get Redis instance safely
 function getRedis() {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
+  try {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      return new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+    }
+  } catch (e) {
+    console.error("Redis Init Error:", e);
   }
   return null;
 }
@@ -254,7 +258,7 @@ export async function getStudentRoutineData() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('department, semester, section')
+    .select('department, semester, section, student_id')
     .eq('id', userId)
     .single();
 
@@ -307,10 +311,7 @@ export async function getStudentReports() {
 
   const { data } = await supabase
     .from("reports")
-    .select(`
-      *,
-      resources(title, course_code)
-    `)
+    .select(`*`)
     .eq("reporter_id", userId)
     .order("created_at", { ascending: false });
 

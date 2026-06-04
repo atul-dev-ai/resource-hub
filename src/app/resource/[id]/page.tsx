@@ -29,8 +29,8 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
       {/* Top Navbar */}
       <div className="bg-[#022c22] border-b border-[#5DCAA5]/20 sticky top-0 z-10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/student-portal/my-uploads" className="flex items-center gap-2 text-[#6ee7b7] hover:text-[#5DCAA5] font-bold transition-colors">
-            <ArrowLeft size={20} /> Back
+          <Link href="/student-portal" className="flex items-center gap-2 text-[#6ee7b7] hover:text-[#5DCAA5] font-bold transition-colors">
+            <ArrowLeft size={20} /> Back to Dashboard
           </Link>
           <div className="font-black text-xl text-white tracking-wide">Resource Details</div>
           <div className="w-20"></div> {/* Spacer for centering */}

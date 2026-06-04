@@ -5,34 +5,25 @@ import { PageSkeleton } from "@/components/PageSkeleton";
 import { ShieldCheck, UserCog, Search, Loader2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAllUsers, invalidateAllUsers } from "@/app/actions/adminActions";
 
 export default function ManagementClient() {
   const supabase = createClient();
-  const [admins, setAdmins] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchAdmins();
-  }, []);
+  const { data: allUsersData, isLoading: loading } = useQuery({
+    queryKey: ["admin_all_users"],
+    queryFn: getAllUsers,
+  });
 
-  const fetchAdmins = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("role", ["super_admin", "admin", "moderator"])
-        .order("role", { ascending: true }); // super_admin will come first
-
-      if (error) throw error;
-      setAdmins(data || []);
-    } catch (error) {
-      toast.error("Failed to load admin list.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const admins = (allUsersData || [])
+    .filter((u: any) => ["super_admin", "admin", "moderator"].includes(u.role))
+    .sort((a: any, b: any) => {
+      const roleOrder: Record<string, number> = { 'super_admin': 1, 'admin': 2, 'moderator': 3 };
+      return roleOrder[a.role] - roleOrder[b.role];
+    });
 
   const handleDemote = async (id: string, currentRole: string) => {
     if (currentRole === 'super_admin') return toast.error("Cannot demote a Super Admin!");
@@ -48,7 +39,9 @@ export default function ManagementClient() {
       
       if (error) throw error;
       
-      setAdmins(prev => prev.filter(a => a.id !== id));
+      await invalidateAllUsers();
+      queryClient.setQueryData(["admin_all_users"], (old: any) => old?.map((u: any) => u.id === id ? { ...u, role: 'student' } : u));
+      
       toast.success("User successfully demoted to student.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });

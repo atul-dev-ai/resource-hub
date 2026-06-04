@@ -97,13 +97,14 @@ export default function LoginPage() {
       if (data.user) {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, student_id")
           .eq("id", data.user.id)
           .single();
 
         if (profileError) console.error("Error fetching role:", profileError);
 
         const userRole = profile?.role || 'student';
+        const studentId = profile?.student_id || 'new';
 
         setMochiStatus("success");
         setErrorMsg("");
@@ -114,9 +115,9 @@ export default function LoginPage() {
         setTimeout(() => {
           // Role-based Redirect Logic
           if (['super_admin', 'admin', 'moderator'].includes(userRole)) {
-            router.push("/admin-portal");
+            router.push(`/admin-portal/${studentId}`);
           } else {
-            router.push("/student-portal");
+            router.push(`/student-portal/${studentId}`);
           }
         }, 1500);
       }

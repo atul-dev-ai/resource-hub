@@ -13,34 +13,38 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-const allAdminMenuItems = [
-  { name: "Dashboard", path: "/admin-portal", icon: LayoutDashboard, roles: ["super_admin", "admin", "moderator"] },
-  { name: "Pending Uploads", path: "/admin-portal/pending", icon: FileCheck, roles: ["super_admin", "admin", "moderator"] },
-  { name: "All Uploads", path: "/admin-portal/uploads", icon: Database, roles: ["super_admin", "admin"] },
-  { name: "Reports", path: "/admin-portal/reports", icon: AlertTriangle, roles: ["super_admin", "admin", "moderator"] },
-  { name: "Users", path: "/admin-portal/users", icon: Users, roles: ["super_admin", "admin"] },
-  { name: "Departments & Courses", path: "/admin-portal/departments", icon: Layers, roles: ["super_admin", "admin"] },
-  { name: "Routine & Rooms", path: "/admin-portal/routine", icon: CalendarDays, roles: ["super_admin", "admin", "moderator"] },
-  { name: "Announcements", path: "/admin-portal/announcements", icon: Megaphone, roles: ["super_admin", "admin"] },
-  { name: "Activity Logs", path: "/admin-portal/logs", icon: Activity, roles: ["super_admin", "admin"] },
-  { name: "Settings", path: "/admin-portal/settings", icon: Settings, roles: ["super_admin", "admin", "moderator"] },
-];
-
-const superAdminOnlyItems = [
-  { name: "Admin Management", path: "/admin-portal/management", icon: ShieldCheck },
-  { name: "Roles & Permissions", path: "/admin-portal/roles", icon: Key },
-];
+import { useParams } from "next/navigation";
 
 export default function AdminPortalLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const [userProfile, setUserProfile] = useState<{ full_name: string, role: string, avatar_url: string } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name: string, student_id: string | null, role: string, avatar_url: string } | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const student_id = params?.student_id || '';
   const supabase = createClient();
+
+  const allAdminMenuItems = [
+    { name: "Dashboard", path: `/admin-portal/${student_id}`, icon: LayoutDashboard, roles: ["super_admin", "admin", "moderator"] },
+    { name: "Pending Uploads", path: `/admin-portal/${student_id}/pending`, icon: FileCheck, roles: ["super_admin", "admin", "moderator"] },
+    { name: "All Uploads", path: `/admin-portal/${student_id}/uploads`, icon: Database, roles: ["super_admin", "admin"] },
+    { name: "Reports", path: `/admin-portal/${student_id}/reports`, icon: AlertTriangle, roles: ["super_admin", "admin", "moderator"] },
+    { name: "Users", path: `/admin-portal/${student_id}/users`, icon: Users, roles: ["super_admin", "admin"] },
+    { name: "Departments & Courses", path: `/admin-portal/${student_id}/departments`, icon: Layers, roles: ["super_admin", "admin"] },
+    { name: "Routine & Rooms", path: `/admin-portal/${student_id}/routine`, icon: CalendarDays, roles: ["super_admin", "admin", "moderator"] },
+    { name: "Announcements", path: `/admin-portal/${student_id}/announcements`, icon: Megaphone, roles: ["super_admin", "admin"] },
+    { name: "Activity Logs", path: `/admin-portal/${student_id}/logs`, icon: Activity, roles: ["super_admin", "admin"] },
+    { name: "Settings", path: `/admin-portal/${student_id}/settings`, icon: Settings, roles: ["super_admin", "admin", "moderator"] },
+  ];
+
+  const superAdminOnlyItems = [
+    { name: "Admin Management", path: `/admin-portal/${student_id}/management`, icon: ShieldCheck },
+    { name: "Roles & Permissions", path: `/admin-portal/${student_id}/roles`, icon: Key },
+  ];
 
   useEffect(() => {
     const fetchAdmin = async () => {
@@ -48,7 +52,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
       if (user) {
         const { data } = await supabase
           .from("profiles")
-          .select("full_name, avatar_url, role")
+          .select("full_name, avatar_url, role, student_id")
           .eq("id", user.id)
           .single();
 
@@ -191,8 +195,13 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                     <span className="text-pink-700 font-bold text-sm">{userProfile?.full_name?.charAt(0) || "A"}</span>
                   )}
                 </div>
-                <div className="hidden md:flex flex-col items-start">
+                <div className="hidden md:flex flex-col items-start justify-center">
                   <span className="text-sm font-bold text-gray-800 leading-none">{userProfile.full_name}</span>
+                  {userProfile?.student_id && (
+                    <span className="text-[10px] font-bold text-pink-600 uppercase tracking-wider leading-tight mt-0.5">
+                      {userProfile.student_id}
+                    </span>
+                  )}
                 </div>
                 <ChevronDown size={14} className="text-gray-500" />
               </button>
@@ -202,7 +211,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
                   <div className="fixed inset-0 z-40 cursor-default" onClick={() => setIsProfileOpen(false)}></div>
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
 
-                    <Link href="/admin-portal/settings" onClick={() => setIsProfileOpen(false)}>
+                    <Link href={`/admin-portal/${student_id}/settings`} onClick={() => setIsProfileOpen(false)}>
                       <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
                         <UserCircle size={18} className="text-slate-400" /> Profile Settings
                       </div>

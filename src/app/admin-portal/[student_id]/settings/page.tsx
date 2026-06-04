@@ -11,8 +11,11 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { useParams } from "next/navigation";
 
 export default function AdminSettingsPage() {
+  const params = useParams();
+  const student_id = params?.student_id || '';
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,7 +100,7 @@ export default function AdminSettingsPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
-        redirectTo: `${window.location.origin}/admin-portal/settings?update=true`,
+        redirectTo: `${window.location.origin}/admin-portal/${student_id}/settings?update=true`,
       });
       if (error) throw error;
 
