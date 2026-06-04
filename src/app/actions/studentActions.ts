@@ -105,14 +105,20 @@ export async function getStudentProfile() {
   };
 
   if (redis) {
-    await redis.set(CACHE_KEY, profile, { ex: 3600 }); // 1 hour TTL
+    try {
+      await redis.set(CACHE_KEY, profile, { ex: 3600 }); // 1 hour TTL
+    } catch(e) {}
   }
   return profile;
 }
 
 export async function invalidateStudentProfile(userId: string) {
   const redis = getRedis();
-  if (redis) await redis.del(`student_profile_${userId}`);
+  if (redis) {
+    try {
+      await redis.del(`student_profile_${userId}`);
+    } catch(e) {}
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +151,9 @@ export async function getUploadMetadata() {
   };
 
   if (redis) {
-    await redis.set(CACHE_KEY, result, { ex: 86400 }); // 24 hours TTL
+    try {
+      await redis.set(CACHE_KEY, result, { ex: 86400 }); // 24 hours TTL
+    } catch(e) {}
   }
   return result;
 }
@@ -178,7 +186,9 @@ export async function getStudentUploads() {
   const result = data || [];
 
   if (redis) {
-    await redis.set(CACHE_KEY, result, { ex: 300 }); // 5 mins
+    try {
+      await redis.set(CACHE_KEY, result, { ex: 300 }); // 5 mins
+    } catch(e) {}
   }
   return result;
 }
@@ -186,8 +196,10 @@ export async function getStudentUploads() {
 export async function invalidateStudentUploads(userId: string) {
   const redis = getRedis();
   if (redis) {
-    await redis.del(`student_uploads_${userId}`);
-    await redis.del(`student_dashboard_${userId}`); // Also invalidate dashboard to refresh counts
+    try {
+      await redis.del(`student_uploads_${userId}`);
+      await redis.del(`student_dashboard_${userId}`); // Also invalidate dashboard to refresh counts
+    } catch(e) {}
   }
 }
 
@@ -217,7 +229,9 @@ export async function getClassRoutines() {
   };
 
   if (redis) {
-    await redis.set(CACHE_KEY, result, { ex: 86400 }); // 24 hours
+    try {
+      await redis.set(CACHE_KEY, result, { ex: 86400 }); // 24 hours
+    } catch(e) {}
   }
   return result;
 }
@@ -265,7 +279,9 @@ export async function getStudentRoutineData() {
   const result = { profile, myRoutine };
 
   if (redis) {
-    await redis.set(CACHE_KEY, result, { ex: 3600 }); // 1 hour
+    try {
+      await redis.set(CACHE_KEY, result, { ex: 3600 }); // 1 hour
+    } catch(e) {}
   }
   return result;
 }
@@ -301,12 +317,18 @@ export async function getStudentReports() {
   const result = data || [];
 
   if (redis) {
-    await redis.set(CACHE_KEY, result, { ex: 600 }); // 10 mins
+    try {
+      await redis.set(CACHE_KEY, result, { ex: 600 }); // 10 mins
+    } catch(e) {}
   }
   return result;
 }
 
 export async function invalidateStudentReports(userId: string) {
   const redis = getRedis();
-  if (redis) await redis.del(`student_reports_${userId}`);
+  if (redis) {
+    try {
+      await redis.del(`student_reports_${userId}`);
+    } catch(e) {}
+  }
 }
