@@ -31,17 +31,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard')
+  const isProtectedRoute = request.nextUrl.pathname.startsWith('/student-portal') || request.nextUrl.pathname.startsWith('/admin-portal')
 
-  if (isDashboardRoute && !user) {
-    // Redirect to login if trying to access dashboard without being authenticated
+  if (isProtectedRoute && !user) {
+    // Redirect to login if trying to access protected routes without being authenticated
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Optional: Redirect authenticated users away from login/signup pages
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/signup');
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/student-portal', request.url))
   }
 
   return supabaseResponse
@@ -49,7 +49,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
+    '/student-portal/:path*',
+    '/admin-portal/:path*',
     '/login',
     '/signup'
   ],

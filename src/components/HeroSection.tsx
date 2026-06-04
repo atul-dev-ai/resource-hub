@@ -106,7 +106,7 @@ export default function Hero() {
   const y3 = useTransform(scrollY, [0, 500], [0, -80]);
 
   return (
-    <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative w-full h-screen flex items-center justify-center overflow-hidden">
 
       {/* Background Image & Dark Green Overlay Section */}
       <div className="absolute inset-0 z-0">
