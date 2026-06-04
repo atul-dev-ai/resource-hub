@@ -245,7 +245,7 @@ export async function getStudentRoutineData() {
     .single();
 
   let myRoutine: any[] = [];
-  if (profile) {
+  if (profile && profile.section) {
     const baseSection = profile.section.replace(/\d$/, '');
     const { data: routineData } = await supabase
       .from('academic_routines')
