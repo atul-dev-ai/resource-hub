@@ -108,7 +108,16 @@ export default function Navbar() {
           
           {/* Logo Section */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/#home" className="flex items-center gap-2 text-2xl font-bold text-white cursor-pointer">
+            <Link 
+              href="/#home" 
+              onClick={(e) => {
+                if (window.location.pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="flex items-center gap-2 text-2xl font-bold text-white cursor-pointer"
+            >
               <Image src="/logo.png" alt="Logo" width={32} height={32} className="object-contain" />
               <span>Resource<span className="text-green-300">Hub</span></span>
             </Link>

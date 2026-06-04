@@ -10,11 +10,18 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAllUsers, invalidateAllUsers } from "@/app/actions/adminActions";
 
 export default function UsersClient() {
   const supabase = createClient();
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  const { data: usersData, isLoading: loading } = useQuery({
+    queryKey: ["admin_all_users"],
+    queryFn: getAllUsers,
+  });
+  const users = usersData || [];
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,27 +32,6 @@ export default function UsersClient() {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   const departments = ["CSE", "SWE", "CIS", "EEE", "BBA", "ENG", "PHR", "LAW"];
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error: any) {
-      toast.error("Failed to load users.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ================= ACTIONS =================
 
@@ -63,7 +49,8 @@ export default function UsersClient() {
       const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", id);
       if (error) throw error;
 
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, role: newRole } : u));
+      await invalidateAllUsers();
+      queryClient.setQueryData(["admin_all_users"], (old: any) => old?.map((u: any) => u.id === id ? { ...u, role: newRole } : u));
       if (selectedUser?.id === id) setSelectedUser({ ...selectedUser, role: newRole });
       
       toast.success(`User successfully ${newRole === 'banned' ? 'banned' : 'restored'}.`, { id: loadingToast });
@@ -88,8 +75,8 @@ export default function UsersClient() {
       const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
       
       if (error) throw error;
-      
-      setUsers(prev => prev.filter(u => u.id !== id));
+      await invalidateAllUsers();
+      queryClient.setQueryData(["admin_all_users"], (old: any) => old?.filter((u: any) => u.id !== id));
       toast.success("User deleted successfully.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete user. Check permissions.", { id: loadingToast });

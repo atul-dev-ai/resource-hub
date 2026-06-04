@@ -7,28 +7,18 @@ import {
   Terminal, Loader2, RefreshCw 
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminLogs } from "@/app/actions/adminActions";
 
 export default function ActivityLogsPage() {
-  const supabase = createClient();
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchLogs();
-  }, []);
+  const { data: logsData, isLoading: loading, refetch } = useQuery({
+    queryKey: ["admin_logs"],
+    queryFn: getAdminLogs,
+  });
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("activity_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100); // Last 100 entries
-
-    if (!error) setLogs(data || []);
-    setLoading(false);
-  };
+  const logs = logsData || [];
 
   const filteredLogs = logs.filter(log => 
     log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +43,7 @@ export default function ActivityLogsPage() {
           <p className="text-sm text-slate-500 font-medium mt-1">Monitor real-time actions across the platform.</p>
         </div>
         <button 
-          onClick={fetchLogs} 
+          onClick={() => refetch()} 
           className="p-2.5 bg-emerald-500 border border-slate-200 rounded-xl hover:bg-slate-500 transition-all cursor-pointer shadow-sm"
         >
           <RefreshCw size={20} className={loading ? "animate-spin" : ""} />

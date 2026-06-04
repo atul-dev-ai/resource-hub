@@ -1,23 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PlusCircle, MapPin, CalendarDays, Clock, Building, Users, BookOpen, Edit, X, Trash2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import PremiumLoading from "@/components/PremiumLoading";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAdminRoutineData, invalidateAdminRoutineData } from "@/app/actions/adminActions";
 
 export default function RoutineClient() {
   const [activeTab, setActiveTab] = useState<'routine' | 'rooms'>('routine');
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  // Data States
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [semesters, setSemesters] = useState<any[]>([]);
-  const [routines, setRoutines] = useState<any[]>([]);
+  // Fetch Data using React Query
+  const { data: routineData, isLoading: loading } = useQuery({
+    queryKey: ["admin_routine_data"],
+    queryFn: getAdminRoutineData,
+  });
+
+  const rooms = routineData?.rooms || [];
+  const courses = routineData?.courses || [];
+  const departments = routineData?.departments || [];
+  const semesters = routineData?.semesters || [];
+  const routines = routineData?.routines || [];
 
   // Room Form State
   const [roomForm, setRoomForm] = useState({ id: '', room_number: '', building: '', room_type: 'Classroom' });
@@ -32,31 +39,9 @@ export default function RoutineClient() {
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      const [roomsRes, coursesRes, deptsRes, semsRes, routinesRes] = await Promise.all([
-        supabase.from("rooms").select("*").order("room_number"),
-        supabase.from("courses").select("id, course_code, course_name"),
-        supabase.from("departments").select("code, name"),
-        supabase.from("semesters").select("name"),
-        supabase.from("academic_routines").select("*").order("id", { ascending: false })
-      ]);
-
-      if (roomsRes.data) setRooms(roomsRes.data);
-      if (coursesRes.data) setCourses(coursesRes.data);
-      if (deptsRes.data) setDepartments(deptsRes.data);
-      if (semsRes.data) setSemesters(semsRes.data);
-      if (routinesRes.data) setRoutines(routinesRes.data);
-    } catch (error) {
-      toast.error("Failed to load initial data");
-    } finally {
-      setLoading(false);
-    }
+  const refreshData = async () => {
+    await invalidateAdminRoutineData();
+    queryClient.invalidateQueries({ queryKey: ["admin_routine_data"] });
   };
 
   // --- ROOM MANAGEMENT ---
@@ -73,18 +58,17 @@ export default function RoutineClient() {
       };
 
       if (isEditingRoom) {
-        const { data, error } = await supabase.from('rooms').update(roomData).eq('id', roomForm.id).select();
+        const { error } = await supabase.from('rooms').update(roomData).eq('id', roomForm.id);
         if (error) throw error;
         toast.success("Room updated successfully!", { id: toastId });
-        if (data) setRooms(rooms.map(r => r.id === roomForm.id ? data[0] : r));
-        setIsEditingRoom(false);
       } else {
-        const { data, error } = await supabase.from('rooms').insert([roomData]).select();
+        const { error } = await supabase.from('rooms').insert([roomData]);
         if (error) throw error;
         toast.success("Room added successfully!", { id: toastId });
-        if (data) setRooms([...rooms, data[0]]);
       }
-      // Reset Full Form
+      
+      await refreshData();
+      setIsEditingRoom(false);
       setRoomForm({ id: '', room_number: '', building: '', room_type: 'Classroom' });
     } catch (error: any) {
       toast.error(error.message || "Failed to save room", { id: toastId });
@@ -112,8 +96,8 @@ export default function RoutineClient() {
       const { error } = await supabase.from('rooms').delete().eq('id', id);
       if (error) throw error;
       toast.success("Room deleted successfully", { id: toastId });
-      setRooms(rooms.filter(r => r.id !== id));
-      setRoutines(routines.filter(r => r.room_id !== id));
+      
+      await refreshData();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete room", { id: toastId });
     }
@@ -123,19 +107,15 @@ export default function RoutineClient() {
   const handleSaveRoutine = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Normalize Time function (Converts "10:00:00" to "10:00" to avoid string comparison bugs)
     const normTime = (t: string) => t.substring(0, 5);
-
     const formStart = normTime(routineForm.start_time);
     const formEnd = normTime(routineForm.end_time);
 
-    // Validation: Start time must be before End time
     if (formStart >= formEnd) {
       toast.error("Start time must be earlier than end time!");
       return;
     }
 
-    // Validation: Check Overlaps & Conflicts (Fixed exact time boundary issue)
     const isOverlap = (start1: string, end1: string, start2: string, end2: string) => {
       return normTime(start1) < normTime(end2) && normTime(end1) > normTime(start2); 
     };
@@ -182,19 +162,17 @@ export default function RoutineClient() {
       };
 
       if (isEditingRoutine) {
-        const { data, error } = await supabase.from('academic_routines').update(routineData).eq('id', routineForm.id).select();
+        const { error } = await supabase.from('academic_routines').update(routineData).eq('id', routineForm.id);
         if (error) throw error;
         toast.success("Routine updated successfully!", { id: toastId });
-        if (data) setRoutines(routines.map(r => r.id === routineForm.id ? data[0] : r));
-        setIsEditingRoutine(false);
       } else {
-        const { data, error } = await supabase.from('academic_routines').insert([routineData]).select();
+        const { error } = await supabase.from('academic_routines').insert([routineData]);
         if (error) throw error;
         toast.success("Routine added successfully!", { id: toastId });
-        if (data) setRoutines([data[0], ...routines]);
       }
       
-      // ✅ Completely reset the form
+      await refreshData();
+      setIsEditingRoutine(false);
       setRoutineForm({
         id: '', room_id: '', day_of_week: 'Monday', start_time: '', end_time: '',
         course_id: '', department: '', batch: '', semester: '', section: '', teacher_name: ''
@@ -226,7 +204,6 @@ export default function RoutineClient() {
   };
 
   const cancelEditRoutine = () => {
-    // ✅ Completely reset the form on cancel
     setRoutineForm({
       id: '', room_id: '', day_of_week: 'Monday', start_time: '', end_time: '',
       course_id: '', department: '', batch: '', semester: '', section: '', teacher_name: ''
@@ -242,7 +219,8 @@ export default function RoutineClient() {
       const { error } = await supabase.from('academic_routines').delete().eq('id', id);
       if (error) throw error;
       toast.success("Schedule deleted successfully", { id: toastId });
-      setRoutines(routines.filter(r => r.id !== id));
+      
+      await refreshData();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete schedule", { id: toastId });
     }
@@ -309,7 +287,7 @@ export default function RoutineClient() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Select Room</label>
                 <select required value={routineForm.room_id} onChange={e => setRoutineForm({...routineForm, room_id: e.target.value})} className="w-full border border-gray-300 text-gray-700 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer">
                   <option value="">-- Choose Room --</option>
-                  {rooms.map(r => <option key={r.id} value={r.id}>{r.room_number} ({r.building})</option>)}
+                  {rooms.map((r: any) => <option key={r.id} value={r.id}>{r.room_number} ({r.building})</option>)}
                 </select>
               </div>
 
@@ -325,7 +303,7 @@ export default function RoutineClient() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Course</label>
                 <select required value={routineForm.course_id} onChange={e => setRoutineForm({...routineForm, course_id: e.target.value})} className="w-full border border-gray-300 text-gray-700 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer">
                   <option value="">-- Choose Course --</option>
-                  {courses.map(c => <option key={c.id} value={c.id}>{c.course_code} - {c.course_name}</option>)}
+                  {courses.map((c: any) => <option key={c.id} value={c.id}>{c.course_code} - {c.course_name}</option>)}
                 </select>
               </div>
 
@@ -349,7 +327,7 @@ export default function RoutineClient() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Department</label>
                 <select required value={routineForm.department} onChange={e => setRoutineForm({...routineForm, department: e.target.value})} className="w-full border border-gray-300 text-gray-700 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer">
                   <option value="">-- Dept --</option>
-                  {departments.map(d => <option key={d.code} value={d.code}>{d.code}</option>)}
+                  {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                 </select>
               </div>
 
@@ -357,7 +335,7 @@ export default function RoutineClient() {
                 <label className="text-xs font-bold text-gray-500 uppercase">Semester</label>
                 <select required value={routineForm.semester} onChange={e => setRoutineForm({...routineForm, semester: e.target.value})} className="w-full border border-gray-300 text-gray-700 bg-white rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer">
                   <option value="">-- Sem --</option>
-                  {semesters.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                  {semesters.map((s: any) => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
 
@@ -405,9 +383,9 @@ export default function RoutineClient() {
                   {routines.length === 0 ? (
                     <tr><td colSpan={6} className="text-center py-8 text-gray-400 font-medium">No schedules added yet.</td></tr>
                   ) : (
-                    routines.map(routine => {
-                      const course = courses.find(c => c.id === routine.course_id);
-                      const room = rooms.find(r => r.id === routine.room_id);
+                    routines.map((routine: any) => {
+                      const course = courses.find((c: any) => c.id === routine.course_id);
+                      const room = rooms.find((r: any) => r.id === routine.room_id);
                       return (
                         <tr key={routine.id} className={`hover:bg-pink-50 transition-colors ${isEditingRoutine && routineForm.id === routine.id ? 'bg-pink-50/50' : ''}`}>
                           <td className="px-6 py-3 font-bold text-gray-800">{routine.day_of_week}</td>
@@ -503,7 +481,7 @@ export default function RoutineClient() {
                   {rooms.length === 0 ? (
                     <tr><td colSpan={4} className="text-center py-8 text-gray-400 font-medium">No rooms added yet.</td></tr>
                   ) : (
-                    rooms.map(room => (
+                    rooms.map((room: any) => (
                       <tr key={room.id} className={`hover:bg-pink-50 transition-colors ${isEditingRoom && roomForm.id === room.id ? 'bg-rose-50/50' : ''}`}>
                         <td className="px-6 py-3 font-bold text-gray-800">{room.room_number}</td>
                         <td className="px-6 py-3 text-gray-600">{room.building}</td>

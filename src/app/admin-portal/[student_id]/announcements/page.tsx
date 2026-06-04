@@ -10,40 +10,25 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAnnouncementsList, invalidateAnnouncementsList } from "@/app/actions/adminActions";
 
 export default function AnnouncementsPage() {
   const supabase = createClient();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+
+  const { data: annData, isLoading: loading } = useQuery({
+    queryKey: ["admin_announcements"],
+    queryFn: getAnnouncementsList,
+  });
+  const announcements = annData || [];
 
   // Form States
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [type, setType] = useState("info");
   const [isPinned, setIsPinned] = useState(false);
-
-  useEffect(() => {
-    fetchAnnouncements();
-  }, []);
-
-  const fetchAnnouncements = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("announcements")
-        .select("*, profiles(full_name)")
-        .order("is_pinned", { ascending: false }) // Pinned ones first
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setAnnouncements(data || []);
-    } catch (error) {
-      toast.error("Failed to load announcements.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePostAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,14 +49,17 @@ export default function AnnouncementsPage() {
 
       if (error) throw error;
 
-      // Update UI: Put pinned at top, otherwise at beginning of unpinned
-      let newAnnouncements = [...announcements, data];
-      newAnnouncements.sort((a, b) => {
-        if (a.is_pinned === b.is_pinned) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        return a.is_pinned ? -1 : 1;
+      await invalidateAnnouncementsList();
+
+      queryClient.setQueryData(["admin_announcements"], (old: any) => {
+        let newAnnouncements = [...(old || []), data];
+        newAnnouncements.sort((a, b) => {
+          if (a.is_pinned === b.is_pinned) return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return a.is_pinned ? -1 : 1;
+        });
+        return newAnnouncements;
       });
 
-      setAnnouncements(newAnnouncements);
       setTitle(""); setContent(""); setType("info"); setIsPinned(false);
       
       await logActivity("CREATE_ANNOUNCEMENT", `Posted announcement: "${title}"`);
@@ -88,8 +76,8 @@ export default function AnnouncementsPage() {
     try {
       const { error } = await supabase.from("announcements").delete().eq("id", id);
       if (error) throw error;
-      
-      setAnnouncements(announcements.filter(a => a.id !== id));
+      await invalidateAnnouncementsList();
+      queryClient.setQueryData(["admin_announcements"], (old: any) => old?.filter((a: any) => a.id !== id));
       await logActivity("DELETE_ANNOUNCEMENT", `Deleted announcement: "${title}"`);
       toast.success("Announcement removed.");
     } catch (error: any) {

@@ -11,41 +11,22 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getAdminReports, invalidateAdminReports } from "@/app/actions/adminActions";
 
 export default function AdminReportsPage() {
     const supabase = createClient();
-    const [reports, setReports] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [selectedReport, setSelectedReport] = useState<any | null>(null);
 
-    useEffect(() => {
-        fetchReports();
-    }, []);
-
-    const fetchReports = async () => {
-        setLoading(true);
-        try {
-            // FIX: Added email, department, and student_id to the fetch query
-            const { data, error } = await supabase
-                .from("reports")
-                .select("*, profiles(full_name, email, department, student_id)") 
-                .order("created_at", { ascending: false });
-
-            if (error) {
-                console.error("Supabase Fetch Error:", error);
-                throw error;
-            }
-
-            setReports(data || []);
-        } catch (error: any) {
-            toast.error("Failed to load reports. Check console.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: reportsData, isLoading: loading } = useQuery({
+        queryKey: ["admin_reports"],
+        queryFn: getAdminReports,
+    });
+    const reports = reportsData || [];
 
     const handleUpdateStatus = async (id: string, newStatus: string) => {
         const loadingToast = toast.loading(`Updating status to ${newStatus}...`);
@@ -53,7 +34,9 @@ export default function AdminReportsPage() {
             const { error } = await supabase.from("reports").update({ status: newStatus }).eq("id", id);
             if (error) throw error;
 
-            setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
+            await invalidateAdminReports();
+            queryClient.setQueryData(["admin_reports"], (old: any) => old?.map((r: any) => r.id === id ? { ...r, status: newStatus } : r));
+            
             if (selectedReport?.id === id) setSelectedReport({ ...selectedReport, status: newStatus });
 
             await logActivity("UPDATE_REPORT_STATUS", `Changed report ID: ${id} status to ${newStatus}`);
@@ -68,7 +51,10 @@ export default function AdminReportsPage() {
         try {
             const { error } = await supabase.from("reports").delete().eq("id", id);
             if (error) throw error;
-            setReports(reports.filter(r => r.id !== id));
+            
+            await invalidateAdminReports();
+            queryClient.setQueryData(["admin_reports"], (old: any) => old?.filter((r: any) => r.id !== id));
+            
             setSelectedReport(null);
             toast.success("Report deleted.");
         } catch (error: any) {

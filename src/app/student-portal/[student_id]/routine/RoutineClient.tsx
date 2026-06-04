@@ -1,11 +1,12 @@
-// src/app/student-portal/routine/RoutineClient.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, MapPin, Building2, User, SearchX, CheckCircle2, Hash } from "lucide-react";
+import { Calendar, Clock, MapPin, Building2, User, SearchX, Hash } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getClassRoutines, getStudentRoutineData } from "@/app/actions/studentActions";
+import PremiumLoading from "@/components/PremiumLoading";
 
-// কার্ডের জন্য ডিফারেন্ট কালার প্যালেট
 const cardColors = [
   { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", accent: "bg-emerald-600", tag: "bg-emerald-100" },
   { bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", accent: "bg-pink-600", tag: "bg-pink-100" },
@@ -14,14 +15,7 @@ const cardColors = [
   { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", accent: "bg-rose-600", tag: "bg-rose-100" },
 ];
 
-interface RoutineClientProps {
-  profile: any;
-  myRoutine: any[];
-  allRooms: any[];
-  allRoutines: any[];
-}
-
-export default function RoutineClient({ profile, myRoutine, allRooms, allRoutines }: RoutineClientProps) {
+export default function RoutineClient() {
   const [activeTab, setActiveTab] = useState<'my-routine' | 'empty-rooms'>('my-routine');
   const [currentDay, setCurrentDay] = useState("");
   const [currentTime, setCurrentTime] = useState("");
@@ -29,7 +23,23 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+  const { data: routineData, isLoading: loadingRoutine } = useQuery({
+    queryKey: ["student_routine_data"],
+    queryFn: getStudentRoutineData,
+  });
+
+  const { data: allRoutinesData, isLoading: loadingAll } = useQuery({
+    queryKey: ["global_class_routines"],
+    queryFn: getClassRoutines,
+  });
+
+  const profile = routineData?.profile || null;
+  const myRoutine = routineData?.myRoutine || [];
+  const allRooms = allRoutinesData?.rooms || [];
+  const allRoutines = allRoutinesData?.routines || [];
+
   useEffect(() => {
+    if (loadingAll) return;
     const updateTimeAndRooms = () => {
       const now = new Date();
       const today = now.toLocaleDateString('en-US', { weekday: 'long' });
@@ -39,20 +49,20 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
       setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
 
       const occupiedRoomIds = allRoutines
-        .filter(r => r.day_of_week === today && r.start_time <= timeString && r.end_time >= timeString)
-        .map(r => r.room_id);
+        .filter((r: any) => r.day_of_week === today && r.start_time <= timeString && r.end_time >= timeString)
+        .map((r: any) => r.room_id);
 
-      const currentlyEmpty = allRooms.filter(room => !occupiedRoomIds.includes(room.id));
+      const currentlyEmpty = allRooms.filter((room: any) => !occupiedRoomIds.includes(room.id));
       setEmptyRoomsList(currentlyEmpty);
     };
 
     updateTimeAndRooms();
     const interval = setInterval(updateTimeAndRooms, 60000);
     return () => clearInterval(interval);
-  }, [allRooms, allRoutines]);
+  }, [allRooms, allRoutines, loadingAll]);
 
   const groupedRoutine = daysOfWeek.reduce((acc, day) => {
-    acc[day] = myRoutine.filter(r => r.day_of_week === day);
+    acc[day] = myRoutine.filter((r: any) => r.day_of_week === day);
     return acc;
   }, {} as Record<string, any[]>);
 
@@ -63,6 +73,8 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
+  if (loadingRoutine || loadingAll) return <PremiumLoading />;
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -70,10 +82,19 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
           <h1 className="text-2xl font-black text-gray-900">Academic Routine</h1>
           <p className="text-sm text-gray-500 font-medium mt-1">Personalized schedule for your academic success.</p>
         </div>
-        <div className="flex gap-3">
-          <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold border border-blue-100 uppercase">{profile?.department}</span>
-          <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">{profile?.semester}</span>
-          <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-bold border border-purple-100 uppercase">{profile?.section}</span>
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
+          {profile?.student_id && (
+            <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold border border-emerald-100">{profile.student_id}</span>
+          )}
+          {profile?.department && (
+            <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold border border-blue-100 uppercase">{profile.department}</span>
+          )}
+          {profile?.semester && (
+            <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">{profile.semester}</span>
+          )}
+          {profile?.section && (
+            <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-bold border border-purple-100 uppercase">{profile.section}</span>
+          )}
         </div>
       </div>
 
@@ -93,6 +114,7 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
               <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <SearchX size={48} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-bold text-gray-700">No Routine Found</h3>
+                <p className="text-gray-500 mt-2">Ensure your department, semester, and section are correctly set in your profile.</p>
               </div>
             ) : (
               daysOfWeek.map(day => groupedRoutine[day]?.length > 0 && (
@@ -105,8 +127,7 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
                     {day === currentDay && <span className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase">Today</span>}
                   </div>
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {groupedRoutine[day].map((cls, idx) => {
-                      // কালার ডিস্ট্রিবিউশন
+                    {groupedRoutine[day].map((cls: any, idx: number) => {
                       const color = cardColors[idx % cardColors.length];
                       
                       return (
@@ -158,12 +179,10 @@ export default function RoutineClient({ profile, myRoutine, allRooms, allRoutine
           </motion.div>
         )}
         
-        {/* Empty Rooms Tab remains same, just ensure design consistency */}
         {activeTab === 'empty-rooms' && (
            <motion.div key="empty-rooms" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {/* ... Empty Rooms logic remains same as before ... */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {emptyRoomsList.map(room => (
+                {emptyRoomsList.map((room: any) => (
                    <div key={room.id} className="bg-white border border-gray-200 rounded-xl p-4 text-center hover:shadow-md transition-all hover:border-green-400">
                       <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
                          <MapPin size={20} />

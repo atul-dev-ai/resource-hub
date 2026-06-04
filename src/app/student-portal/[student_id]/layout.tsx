@@ -13,29 +13,33 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
-const menuItems = [
-  { name: "Dashboard", path: "/student-portal", icon: Home },
-  { name: "Class Routine", path: "/student-portal/routine", icon: CalendarDays },
-  { name: "Resources", path: "/student-portal/resources", icon: BookOpen },
-  { name: "Upload", path: "/student-portal/upload", icon: UploadCloud },
-  { name: "My Uploads", path: "/student-portal/my-uploads", icon: Folder },
-  { name: "Reports", path: "/student-portal/reports", icon: AlertTriangle},
-];
-
-const bottomMenuItems = [
-  { name: "Profile", path: "/student-portal/profile", icon: User },
-  { name: "Settings", path: "/student-portal/settings", icon: Settings },
-];
+import { useParams } from "next/navigation";
 
 export default function StudentPortalLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ full_name: string; student_id: string | null; avatar_url: string | null } | null>(null);
   
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const student_id = params?.student_id || '';
   const supabase = createClient();
+
+  const menuItems = [
+    { name: "Dashboard", path: `/student-portal/${student_id}`, icon: Home },
+    { name: "Class Routine", path: `/student-portal/${student_id}/routine`, icon: CalendarDays },
+    { name: "Resources", path: `/student-portal/${student_id}/resources`, icon: BookOpen },
+    { name: "Upload", path: `/student-portal/${student_id}/upload`, icon: UploadCloud },
+    { name: "My Uploads", path: `/student-portal/${student_id}/my-uploads`, icon: Folder },
+    { name: "Reports", path: `/student-portal/${student_id}/reports`, icon: AlertTriangle},
+  ];
+
+  const bottomMenuItems = [
+    { name: "Profile", path: `/student-portal/${student_id}/profile`, icon: User },
+    { name: "Settings", path: `/student-portal/${student_id}/settings`, icon: Settings },
+  ];
 
   // Fetch User Profile Data
   useEffect(() => {
@@ -44,7 +48,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
       if (user) {
         const { data } = await supabase
           .from("profiles")
-          .select("full_name, avatar_url")
+          .select("full_name, avatar_url, student_id")
           .eq("id", user.id)
           .single();
         if (data) setUserProfile(data);
@@ -216,7 +220,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
 
           <div className="flex items-center gap-3 sm:gap-5">
             <Link 
-              href="/student-portal/upload"
+              href={`/student-portal/${student_id}/upload`}
               className="hidden sm:flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-full hover:bg-emerald-700 transition duration-300 font-medium text-sm shadow-sm cursor-pointer"
             >
               <PlusCircle size={18} />
@@ -243,11 +247,18 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
                     </span>
                   )}
                 </div>
-                <div className="hidden md:flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-gray-700 max-w-[100px] truncate">
-                    {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : "Student"}
-                  </span>
-                  <ChevronDown size={14} className={`text-gray-500 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
+                <div className="hidden md:flex flex-col items-start justify-center">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-gray-700 max-w-[100px] truncate leading-tight">
+                      {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : "Student"}
+                    </span>
+                    <ChevronDown size={14} className={`text-gray-500 transition-transform ${isProfileOpen ? "rotate-180" : ""}`} />
+                  </div>
+                  {userProfile?.student_id && (
+                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider leading-tight">
+                      {userProfile.student_id}
+                    </span>
+                  )}
                 </div>
               </button>
 
