@@ -8,6 +8,7 @@ import PremiumLoading from "@/components/PremiumLoading";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAdminRoutineData, invalidateAdminRoutineData } from "@/app/actions/adminActions";
 import { confirmAlert } from "@/utils/toastConfirm";
+import { logActivity } from "@/utils/logger";
 
 const cardColors = [
   { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", accent: "bg-emerald-600", tag: "bg-emerald-100" },
@@ -69,10 +70,12 @@ export default function RoutineClient() {
       if (isEditingRoom) {
         const { error } = await supabase.from('rooms').update(roomData).eq('id', roomForm.id);
         if (error) throw error;
+        await logActivity("UPDATE_ROOM", `Updated room: ${roomForm.room_number}`);
         toast.success("Room updated successfully!", { id: toastId });
       } else {
         const { error } = await supabase.from('rooms').insert([roomData]);
         if (error) throw error;
+        await logActivity("CREATE_ROOM", `Added room: ${roomForm.room_number}`);
         toast.success("Room added successfully!", { id: toastId });
       }
       
@@ -105,6 +108,7 @@ export default function RoutineClient() {
     try {
       const { error } = await supabase.from('rooms').delete().eq('id', id);
       if (error) throw error;
+      await logActivity("DELETE_ROOM", `Deleted room ID: ${id}`);
       toast.success("Room deleted successfully", { id: toastId });
       
       await refreshData();
@@ -180,10 +184,12 @@ export default function RoutineClient() {
       if (isEditingRoutine) {
         const { error } = await supabase.from('academic_routines').update(routineData).eq('id', routineForm.id);
         if (error) throw error;
+        await logActivity("UPDATE_ROUTINE", `Updated routine for Batch ${routineForm.batch} in Room ID: ${routineForm.room_id}`);
         toast.success("Routine updated successfully!", { id: toastId });
       } else {
         const { error } = await supabase.from('academic_routines').insert([routineData]);
         if (error) throw error;
+        await logActivity("CREATE_ROUTINE", `Added routine for Batch ${routineForm.batch} in Room ID: ${routineForm.room_id}`);
         toast.success("Routine added successfully!", { id: toastId });
       }
       
@@ -235,6 +241,7 @@ export default function RoutineClient() {
     try {
       const { error } = await supabase.from('academic_routines').delete().eq('id', id);
       if (error) throw error;
+      await logActivity("DELETE_ROUTINE", `Deleted schedule ID: ${id}`);
       toast.success("Schedule deleted successfully", { id: toastId });
       
       await refreshData();

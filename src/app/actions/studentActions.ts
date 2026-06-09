@@ -312,7 +312,7 @@ export async function getStudentReports() {
   const { data } = await supabase
     .from("reports")
     .select(`*`)
-    .eq("reporter_id", userId)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   const result = data || [];

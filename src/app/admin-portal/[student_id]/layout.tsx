@@ -12,6 +12,7 @@ import {
   Menu, X, LogOut, ChevronDown, Key, UserCircle, CalendarDays
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { NotificationBell } from "@/components/NotificationBell";
 
 import { useParams } from "next/navigation";
 
@@ -183,6 +184,7 @@ export default function AdminPortalLayout({ children }: { children: React.ReactN
           </div>
 
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}

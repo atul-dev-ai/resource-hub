@@ -5,12 +5,13 @@ import { PageSkeleton } from "@/components/PageSkeleton";
 import { motion } from "framer-motion";
 import { 
   Bug, FileWarning, HelpCircle, Lightbulb, 
-  Send, Loader2, Clock, CheckCircle2, AlertCircle 
+  Send, Loader2, Clock, CheckCircle2, AlertCircle, Search 
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getStudentReports, invalidateStudentReports } from "@/app/actions/studentActions";
+import { createNotification } from "@/app/actions/notificationActions";
 
 export default function StudentReportsPage() {
   const supabase = createClient();
@@ -52,7 +53,7 @@ export default function StudentReportsPage() {
       if (!userAuth) throw new Error("Please log in again.");
 
       const { data, error } = await supabase.from("reports").insert([{
-        reporter_id: userAuth.id,
+        user_id: userAuth.id,
         type,
         title,
         description,
@@ -60,6 +61,14 @@ export default function StudentReportsPage() {
       }]).select().single();
 
       if (error) throw error;
+
+      await createNotification({
+        target_role: "admin",
+        title: "New Report Submitted",
+        message: `${userAuth?.user_metadata?.full_name || "A student"} submitted a ${type} report: ${title}`,
+        type: "NEW_REPORT",
+        link: `/admin-portal/${userAuth?.user_metadata?.student_id || "admin"}/reports`
+      });
 
       setTitle(""); setDescription(""); setType("bug");
       
@@ -76,7 +85,7 @@ export default function StudentReportsPage() {
 
   const getStatusBadge = (status: string) => {
     if (status === 'resolved') return <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-black uppercase tracking-wider"><CheckCircle2 size={12}/> Resolved</span>;
-    if (status === 'investigating') return <span className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-black uppercase tracking-wider"><Loader2 size={12} className="animate-spin"/> Investigating</span>;
+    if (status === 'investigating') return <span className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md text-[10px] font-black uppercase tracking-wider"><Search size={12} /> Investigating</span>;
     return <span className="flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-[10px] font-black uppercase tracking-wider"><Clock size={12}/> Pending</span>;
   };
 

@@ -11,6 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import imageCompression from "browser-image-compression";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUploadMetadata, getStudentProfile, invalidateStudentUploads } from "@/app/actions/studentActions";
+import { createNotification } from "@/app/actions/notificationActions";
 
 export default function UploadClient() {
   const supabase = createClient();
@@ -213,6 +214,14 @@ export default function UploadClient() {
       }]);
 
       if (dbError) throw dbError; // এটা ফেইল করলে সরাসরি catch ব্লকে চলে যাবে
+
+      await createNotification({
+        target_role: "admin",
+        title: "New Resource Uploaded",
+        message: `${userAuth?.user_metadata?.full_name || "A student"} uploaded: ${formData.title}`,
+        type: "RESOURCE_UPLOAD",
+        link: `/admin-portal/${userAuth.user_metadata?.student_id || "admin"}/pending`
+      });
 
       localStorage.setItem("lastUploadTimestamp", Date.now().toString());
       

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   FileText, CheckCircle, Clock, Eye, 
-  ArrowRight, Download, FileType, CheckCircle2, Clock3 
+  ArrowRight, Download, FileType, CheckCircle2, Clock3, PlusCircle
 } from "lucide-react";
 import Link from "next/link";
 import PremiumLoading from "@/components/PremiumLoading";
@@ -105,89 +105,82 @@ export default function StudentDashboard() {
           </Link>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
-                <th className="px-6 py-4 font-medium">Resource Name</th>
-                <th className="px-6 py-4 font-medium">Course</th>
-                <th className="px-6 py-4 font-medium hidden sm:table-cell">Date</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {recentResources.length > 0 ? (
-                recentResources.map((item: any) => {
-                  // File type detection
-                  const fileUrls = Array.isArray(item.file_urls) ? item.file_urls : [item.file_urls];
-                  const fileUrl = fileUrls[0] || "";
-                  const isPdf = fileUrl.toLowerCase().includes(".pdf");
-                  
-                  // Date formatting
-                  const formattedDate = new Date(item.created_at).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric'
-                  });
+        <div className="p-6 bg-slate-50/50">
+          {recentResources.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {recentResources.map((item: any) => {
+                // File type detection
+                const fileUrls = Array.isArray(item.file_urls) ? item.file_urls : [item.file_urls];
+                const fileUrl = fileUrls[0] || "";
+                const isPdf = fileUrl.toLowerCase().includes(".pdf");
+                
+                // Date formatting
+                const formattedDate = new Date(item.created_at).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric'
+                });
 
-                  return (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'}`}>
-                            <FileType size={18} />
-                          </div>
-                          <span className="font-medium text-gray-900 text-sm line-clamp-1">{item.title}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 uppercase">
-                          {item.course_code || item.course_name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
-                        {formattedDate}
-                      </td>
-                      <td className="px-6 py-4">
+                return (
+                  <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-xl hover:border-emerald-300 hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`p-3 rounded-xl ${isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'} group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                        <FileType size={22} />
+                      </div>
+                      <div className="flex items-center gap-2">
                         {item.status === "approved" ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200 capitalize">
-                            <CheckCircle2 size={14} /> Approved
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                            <CheckCircle2 size={12} /> Approved
                           </span>
                         ) : item.status === "rejected" ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200 capitalize">
-                            <Clock3 size={14} /> Rejected
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 uppercase tracking-wider">
+                            <Clock3 size={12} /> Rejected
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 capitalize">
-                            <Clock3 size={14} /> Pending
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
+                            <Clock3 size={12} /> Pending
                           </span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <a 
-                          href={fileUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex p-2 text-gray-400 hover:text-emerald-600 bg-white border border-gray-200 hover:border-emerald-200 rounded-lg transition-colors cursor-pointer shadow-sm"
-                        >
-                          <Download size={18} />
-                        </a>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                    <FileText size={40} className="mx-auto mb-3 text-gray-300" />
-                    <p className="font-medium">You haven't uploaded any resources yet.</p>
-                    <Link href={`/student-portal/${student_id}/upload`} className="text-emerald-600 hover:underline text-sm mt-1 inline-block">
-                      Click here to upload your first resource.
-                    </Link>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      </div>
+                    </div>
+                    
+                    <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 leading-tight group-hover:text-emerald-700 transition-colors">
+                      {item.title}
+                    </h3>
+                    
+                    <div className="flex flex-wrap items-center gap-2 mb-6 mt-auto pt-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 uppercase">
+                        {item.course_code || item.course_name || "N/A"}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400">
+                        • {formattedDate}
+                      </span>
+                    </div>
+
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex justify-between items-center">
+                       <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
+                          Action
+                       </span>
+                       <a 
+                        href={fileUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex p-2 text-slate-400 hover:text-white bg-white hover:bg-emerald-600 border border-slate-200 hover:border-emerald-600 rounded-xl transition-all cursor-pointer shadow-sm group-hover:shadow-md"
+                      >
+                        <Download size={18} />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-16 flex flex-col items-center justify-center bg-white rounded-2xl border border-dashed border-gray-300">
+              <FileText size={48} className="text-gray-300 mb-4" />
+              <p className="font-bold text-gray-700 text-lg">You haven't uploaded any resources yet.</p>
+              <Link href={`/student-portal/${student_id}/upload`} className="text-emerald-600 hover:text-emerald-700 font-medium text-sm mt-2 inline-flex items-center gap-1 transition-colors">
+                <PlusCircle size={16} /> Click here to upload your first resource.
+              </Link>
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
