@@ -12,6 +12,7 @@ import {
   Search, Menu, X, PlusCircle, ChevronLeft, ChevronRight, ChevronDown, LogOut, AlertTriangle, CalendarDays
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import { NotificationBell } from "@/components/NotificationBell";
 
 import { useParams } from "next/navigation";
 
@@ -227,10 +228,7 @@ export default function StudentPortalLayout({ children }: { children: React.Reac
               Quick Upload
             </Link>
 
-            <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors cursor-pointer mr-1">
-              <Bell size={22} />
-              <span className="absolute top-1 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
+            <NotificationBell />
 
             {/* Profile Dropdown */}
             <div className="relative">

@@ -303,7 +303,7 @@ export async function getAdminReports() {
   let data = reportsData || [];
 
   if (data.length > 0) {
-    const reporterIds = [...new Set(data.map(r => r.reporter_id).filter(Boolean))];
+    const reporterIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
     if (reporterIds.length > 0) {
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -313,7 +313,7 @@ export async function getAdminReports() {
       if (profilesData) {
         data = data.map((report: any) => ({
           ...report,
-          profiles: profilesData.find(p => p.id === report.reporter_id) || null
+          profiles: profilesData.find(p => p.id === report.user_id) || null
         }));
       }
     }

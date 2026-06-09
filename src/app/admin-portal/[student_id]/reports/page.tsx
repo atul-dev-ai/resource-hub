@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { confirmAlert } from "@/utils/toastConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAdminReports, invalidateAdminReports } from "@/app/actions/adminActions";
+import { invalidateStudentReports } from "@/app/actions/studentActions";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export default function AdminReportsPage() {
@@ -38,6 +39,12 @@ export default function AdminReportsPage() {
             if (error) throw error;
 
             await invalidateAdminReports();
+            
+            const item = reports.find((r: any) => r.id === id);
+            if (item && item.user_id) {
+                await invalidateStudentReports(item.user_id);
+            }
+
             queryClient.setQueryData(["admin_reports"], (old: any) => old?.map((r: any) => r.id === id ? { ...r, status: newStatus } : r));
             
             if (selectedReport?.id === id) setSelectedReport({ ...selectedReport, status: newStatus });
@@ -57,9 +64,16 @@ export default function AdminReportsPage() {
             if (error) throw error;
             
             await invalidateAdminReports();
+
+            const item = reports.find((r: any) => r.id === id);
+            if (item && item.user_id) {
+                await invalidateStudentReports(item.user_id);
+            }
+
             queryClient.setQueryData(["admin_reports"], (old: any) => old?.filter((r: any) => r.id !== id));
             
             setSelectedReport(null);
+            await logActivity("DELETE_REPORT", `Deleted report ID: ${id}`);
             toast.success("Report deleted.");
         } catch (error: any) {
             toast.error(error.message);

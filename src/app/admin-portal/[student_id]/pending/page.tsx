@@ -12,6 +12,7 @@ import { confirmAlert } from "@/utils/toastConfirm";
 import { invalidateResourceCache } from "@/app/actions/resourceActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPendingResources, invalidatePendingResources } from "@/app/actions/adminActions";
+import { createNotification } from "@/app/actions/notificationActions";
 
 export default function PendingUploadsPage() {
   const supabase = createClient();
@@ -30,6 +31,7 @@ export default function PendingUploadsPage() {
   const handleApprove = async (id: string) => {
     const loadingToast = toast.loading("Approving resource...");
     try {
+      const item = pendingItems.find((i: any) => i.id === id);
       const { error } = await supabase.from("resources").update({ status: "approved" }).eq("id", id);
       if (error) throw error;
       
@@ -38,6 +40,27 @@ export default function PendingUploadsPage() {
 
       // Optimistic UI update: Remove from list instantly
       queryClient.setQueryData(["admin_pending_resources"], (old: any) => old?.filter((item: any) => item.id !== id));
+      
+      if (item) {
+        // Notify uploader
+        await createNotification({
+          user_id: item.uploader_id,
+          title: "Resource Approved",
+          message: `Your upload "${item.title}" has been approved!`,
+          type: "RESOURCE_APPROVED",
+          link: `/student-portal/${item.uploader_id}/my-uploads`
+        });
+        
+        // Notify all users
+        await createNotification({
+          target_role: "all",
+          title: "New Resource Added",
+          message: `A new resource "${item.title}" has been added to ${item.course_code}.`,
+          type: "NEW_RESOURCE",
+          link: `/student-portal/resources`
+        });
+      }
+
       toast.success("Resource Approved!", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
@@ -47,6 +70,7 @@ export default function PendingUploadsPage() {
   const handleReject = async (id: string) => {
     const loadingToast = toast.loading("Rejecting resource...");
     try {
+      const item = pendingItems.find((i: any) => i.id === id);
       const { error } = await supabase.from("resources").update({ status: "rejected" }).eq("id", id);
       if (error) throw error;
       
@@ -54,6 +78,17 @@ export default function PendingUploadsPage() {
       await invalidatePendingResources();
 
       queryClient.setQueryData(["admin_pending_resources"], (old: any) => old?.filter((item: any) => item.id !== id));
+      
+      if (item) {
+        await createNotification({
+          user_id: item.uploader_id,
+          title: "Resource Rejected",
+          message: `Your upload "${item.title}" was rejected by admin.`,
+          type: "RESOURCE_REJECTED",
+          link: `/student-portal/${item.uploader_id}/my-uploads`
+        });
+      }
+      
       toast.success("Resource Rejected.", { id: loadingToast });
     } catch (error: any) {
       toast.error(error.message, { id: loadingToast });
