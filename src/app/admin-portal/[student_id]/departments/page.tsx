@@ -10,8 +10,10 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAcademicStructureData, invalidateAcademicStructure } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function AcademicStructurePage() {
   const supabase = createClient();
@@ -19,6 +21,7 @@ export default function AcademicStructurePage() {
   const [activeTab, setActiveTab] = useState<"sessions" | "faculties" | "departments" | "courses">("sessions");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: acdData, isLoading: loading } = useQuery({
     queryKey: ["admin_academic_structure"],
@@ -167,7 +170,8 @@ export default function AcademicStructurePage() {
   };
 
   const handleDeleteSession = async (id: string, batchCode: string) => {
-    if (!window.confirm(`Delete session (Batch ${batchCode})? Linked students may lose their batch data.`)) return;
+    const isConfirmed = await confirmAlert(`Delete session (Batch ${batchCode})? Linked students may lose their batch data.`);
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase.from("academic_sessions").delete().eq("id", id);
       if (error) throw error;
@@ -209,7 +213,8 @@ export default function AcademicStructurePage() {
   };
 
   const handleDeleteFaculty = async (id: string, name: string) => {
-    if (!window.confirm(`Delete Faculty: ${name}?`)) return;
+    const isConfirmed = await confirmAlert(`Delete Faculty: ${name}?`);
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase.from("faculties").delete().eq("id", id);
       if (error) throw error;
@@ -257,7 +262,8 @@ export default function AcademicStructurePage() {
   };
 
   const handleDeleteDepartment = async (id: string, code: string) => {
-    if (!window.confirm(`Delete Department ${code}?`)) return;
+    const isConfirmed = await confirmAlert(`Delete Department ${code}?`);
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase.from("departments").delete().eq("id", id);
       if (error) throw error;
@@ -304,7 +310,8 @@ export default function AcademicStructurePage() {
   };
 
   const handleDeleteCourse = async (id: string, code: string) => {
-    if (!window.confirm(`Delete course ${code}?`)) return;
+    const isConfirmed = await confirmAlert(`Delete course ${code}?`);
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase.from("courses").delete().eq("id", id);
       if (error) throw error;
@@ -319,13 +326,13 @@ export default function AcademicStructurePage() {
 
   // ================= FILTERS LOGIC =================
   const filteredDepartments = departments.filter((d: any) => {
-    const matchesSearch = d.code.toLowerCase().includes(searchTerm.toLowerCase()) || d.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = d.code.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || d.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesFaculty = filterDeptFaculty ? d.faculty_id === filterDeptFaculty : true;
     return matchesSearch && matchesFaculty;
   });
 
   const filteredCourses = courses.filter((c: any) => {
-    const matchesSearch = c.course_code.toLowerCase().includes(searchTerm.toLowerCase()) || c.course_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = c.course_code.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || c.course_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesDept = filterCourseDept ? c.department_code === filterCourseDept : true;
     const matchesSem = filterCourseSem ? c.semester === filterCourseSem : true;
     return matchesSearch && matchesDept && matchesSem;
@@ -480,7 +487,7 @@ export default function AcademicStructurePage() {
                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50">
                  <div className="relative flex-1">
                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                   <input type="text" placeholder="Search departments..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                   <input type="text" placeholder="Search departments..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-900 placeholder:text-gray-400" />
                  </div>
                  <select value={filterDeptFaculty} onChange={e => setFilterDeptFaculty(e.target.value)} className="w-full sm:w-64 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none cursor-pointer">
                    <option value="">All Faculties</option>
@@ -551,7 +558,7 @@ export default function AcademicStructurePage() {
                <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 bg-slate-50">
                  <div className="relative flex-1">
                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                   <input type="text" placeholder="Search course name or code..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 text-gray-500 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                   <input type="text" placeholder="Search course name or code..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 placeholder:text-gray-400" />
                  </div>
                  <div className="flex gap-2">
                    <select value={filterCourseDept} onChange={e => setFilterCourseDept(e.target.value)} className="w-full sm:w-40 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 outline-none cursor-pointer">

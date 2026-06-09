@@ -9,9 +9,11 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminLogs } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function ActivityLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: logsData, isLoading: loading, refetch } = useQuery({
     queryKey: ["admin_logs"],
@@ -21,9 +23,9 @@ export default function ActivityLogsPage() {
   const logs = logsData || [];
 
   const filteredLogs = logs.filter(log => 
-    log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.action?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    log.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    log.user_email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    log.action?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    log.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   const getActionColor = (action: string) => {
@@ -56,7 +58,7 @@ export default function ActivityLogsPage() {
         <input 
           type="text" placeholder="Search logs by email, action, or details..." 
           value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 text-gray-500 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm shadow-sm"
+          className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 placeholder:text-gray-400"
         />
       </div>
 

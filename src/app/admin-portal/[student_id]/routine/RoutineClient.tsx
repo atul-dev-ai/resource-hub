@@ -1,12 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, MapPin, CalendarDays, Clock, Building, Users, BookOpen, Edit, X, Trash2 } from "lucide-react";
+import { PlusCircle, MapPin, CalendarDays, Clock, Building, Users, BookOpen, Edit, X, Trash2, Hash, User } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import PremiumLoading from "@/components/PremiumLoading";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAdminRoutineData, invalidateAdminRoutineData } from "@/app/actions/adminActions";
+import { confirmAlert } from "@/utils/toastConfirm";
+
+const cardColors = [
+  { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", accent: "bg-emerald-600", tag: "bg-emerald-100" },
+  { bg: "bg-pink-50", border: "border-pink-200", text: "text-pink-700", accent: "bg-pink-600", tag: "bg-pink-100" },
+  { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", accent: "bg-indigo-600", tag: "bg-indigo-100" },
+  { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", accent: "bg-amber-600", tag: "bg-amber-100" },
+  { bg: "bg-rose-50", border: "border-rose-200", text: "text-rose-700", accent: "bg-rose-600", tag: "bg-rose-100" },
+];
 
 export default function RoutineClient() {
   const [activeTab, setActiveTab] = useState<'routine' | 'rooms'>('routine');
@@ -89,7 +98,8 @@ export default function RoutineClient() {
   };
 
   const deleteRoom = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this room? It will also delete all routines associated with it!")) return;
+    const isConfirmed = await confirmAlert("Are you sure you want to delete this room? It will also delete all routines associated with it!");
+    if (!isConfirmed) return;
     
     const toastId = toast.loading("Deleting room...");
     try {
@@ -120,7 +130,7 @@ export default function RoutineClient() {
       return normTime(start1) < normTime(end2) && normTime(end1) > normTime(start2); 
     };
 
-    let hasConflict = false;
+    let conflictWarning = "";
     for (const r of routines) {
       if (isEditingRoutine && r.id === routineForm.id) continue;
       
@@ -128,21 +138,27 @@ export default function RoutineClient() {
         if (isOverlap(formStart, formEnd, r.start_time, r.end_time)) {
           
           if (r.room_id === routineForm.room_id) {
-            toast.error(`Room Conflict! This room is already booked from ${normTime(r.start_time)} to ${normTime(r.end_time)}.`);
-            hasConflict = true;
+            conflictWarning = `Room Conflict! This room is already booked from ${normTime(r.start_time)} to ${normTime(r.end_time)}. Do you want to force save anyway?`;
             break;
           }
           
           if (r.department === routineForm.department && r.batch === routineForm.batch && r.section === routineForm.section) {
-            toast.error(`Class Conflict! This batch & section already has a class from ${normTime(r.start_time)} to ${normTime(r.end_time)}.`);
-            hasConflict = true;
+            conflictWarning = `Class Conflict! This batch & section already has a class from ${normTime(r.start_time)} to ${normTime(r.end_time)}. Do you want to force save anyway?`;
+            break;
+          }
+
+          if (r.teacher_name && r.teacher_name.toLowerCase() === routineForm.teacher_name.trim().toLowerCase()) {
+            conflictWarning = `Teacher Conflict! ${r.teacher_name} is already taking a class from ${normTime(r.start_time)} to ${normTime(r.end_time)}. Do you want to force save anyway?`;
             break;
           }
         }
       }
     }
 
-    if (hasConflict) return;
+    if (conflictWarning) {
+      const forceSave = await confirmAlert(conflictWarning);
+      if (!forceSave) return;
+    }
 
     setSubmitting(true);
     const toastId = toast.loading(isEditingRoutine ? "Updating routine..." : "Saving routine...");
@@ -212,7 +228,8 @@ export default function RoutineClient() {
   };
 
   const deleteRoutine = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this schedule?")) return;
+    const isConfirmed = await confirmAlert("Are you sure you want to delete this schedule?");
+    if (!isConfirmed) return;
     
     const toastId = toast.loading("Deleting schedule...");
     try {
@@ -225,6 +242,20 @@ export default function RoutineClient() {
       toast.error(error.message || "Failed to delete schedule", { id: toastId });
     }
   };
+
+  const formatTime = (timeDb: string) => {
+    if(!timeDb) return "";
+    const [h, m] = timeDb.split(':');
+    const date = new Date();
+    date.setHours(parseInt(h), parseInt(m));
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  const groupedRoutine = daysOfWeek.reduce((acc, day) => {
+    acc[day] = routines.filter((r: any) => r.day_of_week === day);
+    acc[day].sort((a: any, b: any) => a.start_time.localeCompare(b.start_time));
+    return acc;
+  }, {} as Record<string, any[]>);
 
   if (loading) return <PremiumLoading />;
 
@@ -363,54 +394,79 @@ export default function RoutineClient() {
           </div>
 
           {/* List of Routines */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-800">Existing Schedules</h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-gray-50 text-gray-500">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Day</th>
-                    <th className="px-6 py-3 font-semibold">Time</th>
-                    <th className="px-6 py-3 font-semibold">Course</th>
-                    <th className="px-6 py-3 font-semibold">Room</th>
-                    <th className="px-6 py-3 font-semibold">Dept & Batch</th>
-                    <th className="px-6 py-3 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {routines.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-8 text-gray-400 font-medium">No schedules added yet.</td></tr>
-                  ) : (
-                    routines.map((routine: any) => {
+          <div className="space-y-6">
+            {routines.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500 font-medium shadow-sm">
+                No schedules added yet.
+              </div>
+            ) : (
+              daysOfWeek.map(day => groupedRoutine[day]?.length > 0 && (
+                <div key={day} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="bg-gray-50 px-6 py-3 border-b border-gray-100 flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-gray-800">{day}</h2>
+                  </div>
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {groupedRoutine[day].map((routine: any, idx: number) => {
                       const course = courses.find((c: any) => c.id === routine.course_id);
                       const room = rooms.find((r: any) => r.id === routine.room_id);
+                      const color = cardColors[idx % cardColors.length];
+                      
                       return (
-                        <tr key={routine.id} className={`hover:bg-pink-50 transition-colors ${isEditingRoutine && routineForm.id === routine.id ? 'bg-pink-50/50' : ''}`}>
-                          <td className="px-6 py-3 font-bold text-gray-800">{routine.day_of_week}</td>
-                          <td className="px-6 py-3 text-gray-600">{routine.start_time.substring(0,5)} - {routine.end_time.substring(0,5)}</td>
-                          <td className="px-6 py-3 text-gray-800">
-                            <span className="font-semibold">{course?.course_code}</span>
-                            <span className="text-gray-500 ml-1">- {course?.course_name || 'Unknown'}</span>
-                          </td>
-                          <td className="px-6 py-3 text-gray-800">{room?.room_number || 'Unknown'}</td>
-                          <td className="px-6 py-3 text-gray-600">{routine.department} ({routine.batch}-{routine.section})</td>
-                          <td className="px-6 py-3 text-right flex justify-end gap-3">
-                            <button onClick={() => editRoutine(routine)} className="text-blue-600 hover:text-blue-800 font-bold p-1 cursor-pointer" title="Edit">
-                              <Edit size={16} />
+                        <div key={routine.id} className={`${color.bg} ${color.border} border-2 rounded-2xl p-5 hover:shadow-lg transition-all duration-300 group relative overflow-hidden ${isEditingRoutine && routineForm.id === routine.id ? 'ring-4 ring-pink-300' : ''}`}>
+                          <div className={`absolute top-0 left-0 w-1.5 h-full ${color.accent}`}></div>
+                          
+                          <div className="flex justify-between items-start mb-3">
+                            <span className={`${color.tag} ${color.text} px-2.5 py-1 text-[10px] font-black rounded uppercase tracking-wider`}>
+                              {course?.course_code || 'Unknown'}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 bg-white/50 px-2 py-1 rounded-lg">
+                               <Hash size={12} /> {routine.department} ({routine.batch}-{routine.section})
+                            </div>
+                          </div>
+                          
+                          <h3 className="font-bold text-gray-900 text-base mb-4 leading-tight min-h-[40px] line-clamp-2">
+                            {course?.course_name || 'Unknown Course'}
+                          </h3>
+
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                              <div className={`p-1.5 rounded-lg ${color.tag}`}>
+                                <Clock size={14} className={color.text} />
+                              </div>
+                              {formatTime(routine.start_time)} - {formatTime(routine.end_time)}
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                              <div className={`p-1.5 rounded-lg ${color.tag}`}>
+                                <MapPin size={14} className={color.text} />
+                              </div>
+                              {room?.room_number || 'Unknown'} <span className="text-gray-400 font-medium">({room?.building})</span>
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+                              <div className={`p-1.5 rounded-lg ${color.tag}`}>
+                                <User size={14} className={color.text} />
+                              </div>
+                              {routine.teacher_name}
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end gap-2 pt-3 border-t border-gray-200/50">
+                            <button onClick={() => editRoutine(routine)} className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-white text-blue-600 hover:bg-blue-50 border border-blue-100 transition-colors shadow-sm cursor-pointer">
+                              <Edit size={14} /> Edit
                             </button>
-                            <button onClick={() => deleteRoutine(routine.id)} className="text-red-500 hover:text-red-700 font-bold p-1 cursor-pointer" title="Delete">
-                              <Trash2 size={16} />
+                            <button onClick={() => deleteRoutine(routine.id)} className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-white text-red-600 hover:bg-red-50 border border-red-100 transition-colors shadow-sm cursor-pointer">
+                              <Trash2 size={14} /> Delete
                             </button>
-                          </td>
-                        </tr>
+                          </div>
+
+                        </div>
                       );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

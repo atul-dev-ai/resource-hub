@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { invalidateResourceCache } from "@/app/actions/resourceActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPendingResources, invalidatePendingResources } from "@/app/actions/adminActions";
@@ -60,8 +61,8 @@ export default function PendingUploadsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to permanently delete this resource from the database?");
-    if (!confirmDelete) return;
+    const isConfirmed = await confirmAlert("Are you sure you want to permanently delete this resource from the database?");
+    if (!isConfirmed) return;
 
     const loadingToast = toast.loading("Deleting resource...");
     try {

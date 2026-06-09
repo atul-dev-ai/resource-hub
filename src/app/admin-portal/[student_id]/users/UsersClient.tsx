@@ -9,9 +9,11 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import Image from "next/image";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllUsers, invalidateAllUsers } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function UsersClient() {
   const supabase = createClient();
@@ -25,6 +27,7 @@ export default function UsersClient() {
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [deptFilter, setDeptFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   
@@ -65,10 +68,10 @@ export default function UsersClient() {
       return;
     }
 
-    const confirmDelete = window.confirm(
+    const isConfirmed = await confirmAlert(
       "EXTREME WARNING: This will permanently delete the user and all their associated data. This action CANNOT be undone. Proceed?"
     );
-    if (!confirmDelete) return;
+    if (!isConfirmed) return;
 
     const loadingToast = toast.loading("Deleting user permanently...");
     try {
@@ -86,8 +89,8 @@ export default function UsersClient() {
   // ================= FILTER LOGIC =================
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
-      (user.full_name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
-      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+      (user.full_name?.toLowerCase() || "").includes(debouncedSearchTerm.toLowerCase()) || 
+      (user.email?.toLowerCase() || "").includes(debouncedSearchTerm.toLowerCase());
     const matchesDept = deptFilter === "all" || user.department === deptFilter;
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     
@@ -113,7 +116,7 @@ export default function UsersClient() {
           <input 
             type="text" placeholder="Search by name or email..." 
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm text-gray-900 placeholder:text-gray-400"
           />
         </div>
         

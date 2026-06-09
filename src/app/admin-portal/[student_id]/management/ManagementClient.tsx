@@ -5,13 +5,16 @@ import { PageSkeleton } from "@/components/PageSkeleton";
 import { ShieldCheck, UserCog, Search, Loader2, ShieldAlert } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllUsers, invalidateAllUsers } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function ManagementClient() {
   const supabase = createClient();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: allUsersData, isLoading: loading } = useQuery({
     queryKey: ["admin_all_users"],
@@ -28,7 +31,8 @@ export default function ManagementClient() {
   const handleDemote = async (id: string, currentRole: string) => {
     if (currentRole === 'super_admin') return toast.error("Cannot demote a Super Admin!");
     
-    if (!window.confirm("Are you sure you want to remove this person's admin privileges and make them a regular student?")) return;
+    const isConfirmed = await confirmAlert("Are you sure you want to remove this person's admin privileges and make them a regular student?");
+    if (!isConfirmed) return;
 
     const loadingToast = toast.loading("Demoting user...");
     try {
@@ -49,8 +53,8 @@ export default function ManagementClient() {
   };
 
   const filteredAdmins = admins.filter(a => 
-    a.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    a.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    a.full_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+    a.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   if (loading) return <PageSkeleton />;
@@ -76,7 +80,7 @@ export default function ManagementClient() {
           <input 
             type="text" placeholder="Search admins..." 
             value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border text-gray-500 border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm font-medium"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm font-medium text-gray-900 placeholder:text-gray-400"
           />
         </div>
       </div>

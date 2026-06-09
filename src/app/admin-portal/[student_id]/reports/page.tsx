@@ -11,13 +11,16 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAdminReports, invalidateAdminReports } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function AdminReportsPage() {
     const supabase = createClient();
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [selectedReport, setSelectedReport] = useState<any | null>(null);
@@ -47,7 +50,8 @@ export default function AdminReportsPage() {
     };
 
     const handleDeleteReport = async (id: string) => {
-        if (!window.confirm("Delete this report permanently?")) return;
+        const isConfirmed = await confirmAlert("Delete this report permanently?");
+        if (!isConfirmed) return;
         try {
             const { error } = await supabase.from("reports").delete().eq("id", id);
             if (error) throw error;
@@ -63,8 +67,8 @@ export default function AdminReportsPage() {
     };
 
     const filteredReports = reports.filter(r => {
-        const matchesSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (r.profiles?.full_name || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = r.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            (r.profiles?.full_name || "").toLowerCase().includes(debouncedSearchTerm.toLowerCase());
         const matchesStatus = statusFilter === "all" || r.status === statusFilter;
         const matchesType = typeFilter === "all" || r.type === typeFilter;
         return matchesSearch && matchesStatus && matchesType;
@@ -99,7 +103,7 @@ export default function AdminReportsPage() {
                     <input
                         type="text" placeholder="Search by title or student name..."
                         value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm"
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm text-gray-900 placeholder:text-gray-400"
                     />
                 </div>
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs text-slate-600 cursor-pointer shadow-sm">

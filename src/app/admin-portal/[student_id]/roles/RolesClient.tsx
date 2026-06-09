@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Search, Loader2, UserCheck, Shield, Award } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 
 export default function RolesClient() {
   const supabase = createClient();
@@ -39,7 +40,8 @@ export default function RolesClient() {
     if (targetUser.role === 'super_admin') return toast.error("Cannot modify Super Admin.");
 
     const confirmMsg = `Are you sure you want to make ${targetUser.full_name} a ${newRole.toUpperCase()}?`;
-    if (!window.confirm(confirmMsg)) return;
+    const isConfirmed = await confirmAlert(confirmMsg);
+    if (!isConfirmed) return;
 
     setUpdating(true);
     const loadingToast = toast.loading("Assigning new role...");
