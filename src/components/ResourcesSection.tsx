@@ -8,6 +8,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { createClient } from "@/utils/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getApprovedResources } from "@/app/actions/resourceActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Filter Options
 const resourceTypes = ["All", "Question Bank", "Assignments", "Notes", "Slides", "Lab Materials"];
@@ -19,6 +20,7 @@ const fileTypes = ["All", "PDF", "Image", "Zip"];
 export default function ResourcesSection() {
   const [userVotes, setUserVotes] = useState<Record<string, string>>({}); // { resource_id: 'like' | 'dislike' }
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedType, setSelectedType] = useState("All");
   const [selectedDept, setSelectedDept] = useState("All");
   const [selectedSem, setSelectedSem] = useState("All");
@@ -193,8 +195,8 @@ export default function ResourcesSection() {
                    : fileUrlString.toLowerCase().endsWith('.zip') ? 'Zip' 
                    : fileUrlString.match(/\.(jpeg|jpg|gif|png)$/) != null ? 'Image' : 'Other';
 
-    const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (Array.isArray(tags) && tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+    const matchesSearch = title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+                          (Array.isArray(tags) && tags.some((tag: string) => tag.toLowerCase().includes(debouncedSearchTerm.toLowerCase())));
     const matchesType = selectedType === "All" || type === selectedType;
     const matchesDept = selectedDept === "All" || dept === selectedDept;
     const matchesSem = selectedSem === "All" || sem === selectedSem;

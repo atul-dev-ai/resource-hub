@@ -12,10 +12,12 @@ import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import { getApprovedResources } from "@/app/actions/resourceActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function ResourcesPage() {
   const supabase = createClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedDept, setSelectedDept] = useState("All");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -30,9 +32,9 @@ export default function ResourcesPage() {
 
   // Search Logic
   const filteredResources = resources.filter(res => 
-    res.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.course_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.course_name.toLowerCase().includes(searchTerm.toLowerCase())
+    res.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    res.course_code.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    res.course_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   return (
@@ -53,7 +55,7 @@ export default function ResourcesPage() {
               placeholder="Search by title, course, or code..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-900 placeholder:text-gray-400"
             />
           </div>
           

@@ -10,6 +10,7 @@ import {
 import { createClient } from "@/utils/supabase/client";
 import { logActivity } from "@/utils/logger";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAnnouncementsList, invalidateAnnouncementsList } from "@/app/actions/adminActions";
 
@@ -72,7 +73,8 @@ export default function AnnouncementsPage() {
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
+    const isConfirmed = await confirmAlert("Are you sure you want to delete this announcement?");
+    if (!isConfirmed) return;
     try {
       const { error } = await supabase.from("announcements").delete().eq("id", id);
       if (error) throw error;

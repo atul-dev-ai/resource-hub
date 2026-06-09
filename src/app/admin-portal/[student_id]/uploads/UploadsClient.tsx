@@ -8,14 +8,17 @@ import {
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
+import { confirmAlert } from "@/utils/toastConfirm";
 import { invalidateResourceCache } from "@/app/actions/resourceActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllAdminResources, invalidateAllAdminResources } from "@/app/actions/adminActions";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function UploadsClient() {
   const supabase = createClient();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -29,10 +32,10 @@ export default function UploadsClient() {
   const departments = ["CSE", "SWE", "CIS", "EEE", "BBA", "ENG", "PHR", "LAW"];
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm(
+    const isConfirmed = await confirmAlert(
       "WARNING: This will permanently delete the resource from the system. Are you sure?"
     );
-    if (!confirmDelete) return;
+    if (!isConfirmed) return;
 
     const loadingToast = toast.loading("Deleting resource...");
     try {
@@ -50,8 +53,8 @@ export default function UploadsClient() {
 
   // Filter Logic
   const filteredResources = resources.filter(res => {
-    const matchesSearch = res.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         res.course_code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = res.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || 
+                         res.course_code.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || res.status === statusFilter;
     const matchesDept = deptFilter === "all" || res.department === deptFilter;
     
@@ -83,7 +86,7 @@ export default function UploadsClient() {
             placeholder="Search by title or course code..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm text-gray-900 placeholder:text-gray-400"
           />
         </div>
         
