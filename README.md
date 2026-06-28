@@ -38,7 +38,7 @@ A modern, community-driven web platform designed for university students to easi
    git clone https://github.com/atul-dev-ai/resource-hub.git
    ```
    ```bash
-   cd vars-resource-hub
+   cd resource-hub
    ```
 
 2. **Install dependencies**
