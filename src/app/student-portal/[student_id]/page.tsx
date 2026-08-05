@@ -157,16 +157,22 @@ export default function StudentDashboard() {
 
                     <div className="mt-auto pt-4 border-t border-slate-100 flex justify-between items-center">
                        <span className="text-xs font-medium text-slate-400 flex items-center gap-1">
-                          Action
+                          {fileUrls.length > 1 ? `${fileUrls.length} Attachments` : "Action"}
                        </span>
-                       <a 
-                        href={fileUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex p-2 text-slate-400 hover:text-white bg-white hover:bg-emerald-600 border border-slate-200 hover:border-emerald-600 rounded-xl transition-all cursor-pointer shadow-sm group-hover:shadow-md"
-                      >
-                        <Download size={18} />
-                      </a>
+                       <div className="flex flex-wrap gap-2 justify-end">
+                         {fileUrls.map((url: string, idx: number) => (
+                           <a 
+                            key={idx}
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex p-2 text-slate-400 hover:text-white bg-white hover:bg-emerald-600 border border-slate-200 hover:border-emerald-600 rounded-xl transition-all cursor-pointer shadow-sm group-hover:shadow-md"
+                            title={`Download file ${idx + 1}`}
+                          >
+                            <Download size={18} />
+                          </a>
+                         ))}
+                       </div>
                     </div>
                   </div>
                 );

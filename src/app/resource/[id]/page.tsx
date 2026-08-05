@@ -18,8 +18,11 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
     return notFound();
   }
 
-  const fileUrl = Array.isArray(resource.file_urls) ? resource.file_urls[0] : resource.file_urls;
-  if (!fileUrl) return notFound();
+  const fileUrls = Array.isArray(resource.file_urls) ? resource.file_urls : [resource.file_urls];
+  if (!fileUrls || fileUrls.length === 0 || !fileUrls[0]) return notFound();
+
+  // Pick the first file for the previewer
+  const fileUrl = fileUrls[0];
 
   // Create a default filename for downloading
   const fileName = resource.title ? `${resource.title.replace(/[^a-zA-Z0-9]/g, '_')}_ResourceHub` : `Resource_${id}`;
@@ -108,7 +111,14 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
             <div className="bg-[#022c22] rounded-3xl p-6 shadow-xl border border-[#5DCAA5]/20">
               <h3 className="font-black text-white mb-4 tracking-wide">Actions</h3>
               <div className="grid grid-cols-2 gap-4">
-                <DownloadButton fileUrl={fileUrl} fileName={fileName} />
+                {fileUrls.map((url: string, index: number) => (
+                  <DownloadButton 
+                    key={index} 
+                    fileUrl={url} 
+                    fileName={fileUrls.length > 1 ? `${fileName}_part${index + 1}` : fileName} 
+                    label={fileUrls.length > 1 ? `Download Part ${index + 1}` : "Download"}
+                  />
+                ))}
                 <button className="flex flex-col items-center justify-center gap-2 py-4 bg-[#064e3b] hover:bg-[#433c33] text-white rounded-2xl font-bold transition-all border border-[#5DCAA5]/10 cursor-pointer">
                   <Share2 size={24} className="text-blue-400" /> Share
                 </button>

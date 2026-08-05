@@ -405,21 +405,24 @@ export default function ResourcesSection() {
                           </div>
                           
                           {/* Right: View & Download Buttons */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
                             <button 
-                              onClick={() => handleAction(resource.id, fileUrl, 'view')}
-                              title="View Resource"
+                              onClick={() => handleAction(resource.id, fileUrlsArray[0], 'view')}
+                              title="View Details"
                               className="flex items-center justify-center p-2 rounded-full cursor-pointer bg-blue-600/20 text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
                             >
                               <Eye size={18} />
                             </button>
-                            <button 
-                              onClick={() => handleAction(resource.id, fileUrl, 'download')}
-                              title="Download Resource"
-                              className="flex items-center justify-center p-2 rounded-full cursor-pointer bg-green-600/20 text-green-400 hover:bg-green-500 hover:text-white transition-all shadow-sm"
-                            >
-                              <Download size={18} />
-                            </button>
+                            {fileUrlsArray.map((url: string, idx: number) => (
+                              <button 
+                                key={idx}
+                                onClick={() => handleAction(resource.id, url, 'download')}
+                                title={`Download File ${idx + 1}`}
+                                className="flex items-center justify-center p-2 rounded-full cursor-pointer bg-green-600/20 text-green-400 hover:bg-green-500 hover:text-white transition-all shadow-sm"
+                              >
+                                <Download size={18} />
+                              </button>
+                            ))}
                           </div>
 
                         </div>

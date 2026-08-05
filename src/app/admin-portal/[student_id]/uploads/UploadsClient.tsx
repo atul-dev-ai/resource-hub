@@ -170,12 +170,24 @@ export default function UploadsClient() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => setPreviewUrl(item.file_urls?.[0])}
-                        className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer"
-                      >
-                        <Eye size={16} />
-                      </button>
+                      {Array.isArray(item.file_urls) ? item.file_urls.map((url: string, idx: number) => (
+                        <button 
+                          key={idx}
+                          onClick={() => setPreviewUrl(url)}
+                          title={`Preview Document ${idx + 1}`}
+                          className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )) : (
+                        <button 
+                          onClick={() => setPreviewUrl(item.file_urls)}
+                          title="Preview Document"
+                          className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleDelete(item.id)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"

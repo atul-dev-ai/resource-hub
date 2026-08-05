@@ -204,13 +204,24 @@ export default function PendingUploadsPage() {
                     {/* Actions */}
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => setPreviewUrl(item.file_urls?.[0])}
-                          title="View Document"
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
-                        >
-                          <Eye size={18} />
-                        </button>
+                        {Array.isArray(item.file_urls) ? item.file_urls.map((url: string, idx: number) => (
+                          <button 
+                            key={idx}
+                            onClick={() => setPreviewUrl(url)}
+                            title={`Preview Document ${idx + 1}`}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )) : (
+                          <button 
+                            onClick={() => setPreviewUrl(item.file_urls)}
+                            title="View Document"
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )}
                         
                         <div className="w-px h-6 bg-slate-200 mx-1"></div>
 

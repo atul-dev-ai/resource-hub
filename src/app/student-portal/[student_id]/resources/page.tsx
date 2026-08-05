@@ -113,20 +113,35 @@ export default function ResourcesPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-6 pt-4 border-t border-gray-50 flex gap-3">
+              <div className="mt-6 pt-4 border-t border-gray-50 flex flex-wrap gap-2">
                 <Link 
                   href={`/resource/${res.id}`}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-black transition-colors cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-black transition-colors cursor-pointer min-w-[120px]"
                 >
                   <Eye size={16} /> View Details
                 </Link>
-                <a 
-                  href={res.file_urls?.[0]} 
-                  download 
-                  className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer"
-                >
-                  <Download size={18} />
-                </a>
+                {Array.isArray(res.file_urls) ? res.file_urls.map((url: string, idx: number) => (
+                  <a 
+                    key={idx}
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    title={`Download File ${idx + 1}`}
+                    className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer flex-shrink-0"
+                  >
+                    <Download size={18} />
+                  </a>
+                )) : (
+                  <a 
+                    href={res.file_urls} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    title="Download File"
+                    className="p-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-pointer flex-shrink-0"
+                  >
+                    <Download size={18} />
+                  </a>
+                )}
               </div>
             </motion.div>
           ))}

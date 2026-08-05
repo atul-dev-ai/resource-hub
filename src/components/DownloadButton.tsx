@@ -4,7 +4,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
-export default function DownloadButton({ fileUrl, fileName }: { fileUrl: string, fileName: string }) {
+export default function DownloadButton({ fileUrl, fileName, label }: { fileUrl: string, fileName: string, label?: string }) {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -44,7 +44,7 @@ export default function DownloadButton({ fileUrl, fileName }: { fileUrl: string,
       ) : (
         <Download size={24} className="group-hover:-translate-y-1 transition-transform" />
       )}
-      {isDownloading ? "Downloading..." : "Download"}
+      {isDownloading ? "Downloading..." : (label || "Download")}
     </button>
   );
 }
