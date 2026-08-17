@@ -312,9 +312,35 @@ export default function ResourcesSection() {
 
         {/* Resources State Check */}
         {isLoading ? (
-          <div className="w-full flex flex-col items-center justify-center py-20 text-green-400">
-            <Loader2 size={48} className="animate-spin mb-4" />
-            <p className="font-medium text-lg">Fetching resources from database...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col h-full shadow-lg animate-pulse min-h-[250px]">
+                <div className="flex justify-between items-start mb-4 gap-4">
+                  <div className="flex-grow">
+                    <div className="w-24 h-6 bg-green-500/20 rounded-md mb-2"></div>
+                    <div className="w-full h-6 bg-white/10 rounded-md mb-2"></div>
+                    <div className="w-2/3 h-6 bg-white/10 rounded-md"></div>
+                  </div>
+                  <div className="w-10 h-10 bg-black/20 rounded-xl flex-shrink-0"></div>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-6 mt-4">
+                  <div className="w-12 h-5 bg-black/30 rounded-md"></div>
+                  <div className="w-16 h-5 bg-black/30 rounded-md"></div>
+                  <div className="w-20 h-5 bg-black/30 rounded-md"></div>
+                </div>
+                <div className="mt-auto flex items-center justify-between pt-4 border-t border-white/10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-4 bg-white/10 rounded-md"></div>
+                    <div className="w-8 h-4 bg-white/10 rounded-md"></div>
+                    <div className="w-8 h-4 bg-white/10 rounded-md"></div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-600/20"></div>
+                    <div className="w-8 h-8 rounded-full bg-green-600/20"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
