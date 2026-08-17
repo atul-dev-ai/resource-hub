@@ -218,7 +218,7 @@ export default function UploadsClient() {
   if (loading) return <PageSkeleton />;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8 text-[#ecfdf5]">
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -235,63 +235,63 @@ export default function UploadsClient() {
 
       {/* Stats/Summary Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-[#022c22] p-6 rounded-3xl border border-[#5DCAA5]/10">
-          <p className="text-[10px] font-black text-[#5DCAA5] uppercase tracking-widest">Total Uploaded</p>
-          <h3 className="text-2xl font-bold text-white mt-1">{myFiles.length}</h3>
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Uploaded</p>
+          <h3 className="text-2xl font-bold text-gray-900 mt-1">{myFiles.length}</h3>
         </div>
-        <div className="bg-[#022c22] p-6 rounded-3xl border border-[#F0997B]/10">
-          <p className="text-[10px] font-black text-[#F0997B] uppercase tracking-widest">Pending Approval</p>
-          <h3 className="text-2xl font-bold text-white mt-1">{myFiles.filter(f => f.status === 'pending').length}</h3>
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+          <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Pending Approval</p>
+          <h3 className="text-2xl font-bold text-gray-900 mt-1">{myFiles.filter(f => f.status === 'pending').length}</h3>
         </div>
-        <div className="bg-[#022c22] p-6 rounded-3xl border border-emerald-500/10">
-          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Approved</p>
-          <h3 className="text-2xl font-bold text-white mt-1">{myFiles.filter(f => f.status === 'approved').length}</h3>
+        <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm">
+          <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Approved</p>
+          <h3 className="text-2xl font-bold text-gray-900 mt-1">{myFiles.filter(f => f.status === 'approved').length}</h3>
         </div>
       </div>
 
       {/* Files Grid */}
       {myFiles.length === 0 ? (
-        <div className="bg-[#022c22] rounded-3xl p-16 text-center border border-dashed border-[#5DCAA5]/20">
-          <FileText className="mx-auto text-[#6ee7b7] mb-4" size={48} />
-          <h3 className="text-xl font-bold text-white">No files found</h3>
-          <p className="text-[#6ee7b7] mt-2">Start sharing your resources with the community.</p>
+        <div className="bg-white rounded-3xl p-16 text-center border border-dashed border-gray-300 shadow-sm">
+          <FileText className="mx-auto text-gray-300 mb-4" size={48} />
+          <h3 className="text-xl font-bold text-gray-700">No files found</h3>
+          <p className="text-gray-500 mt-2">Start sharing your resources with the community.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myFiles.map((item) => (
             <motion.div 
               layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              key={item.id} className="bg-[#022c22] p-5 rounded-3xl border border-[#5DCAA5]/10 hover:border-[#5DCAA5]/30 transition-all flex flex-col group relative overflow-hidden"
+              key={item.id} className="bg-white p-5 rounded-3xl border border-gray-200 hover:shadow-xl hover:border-emerald-300 hover:-translate-y-1 transition-all duration-300 flex flex-col group relative overflow-hidden shadow-sm"
             >
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-[#064e3b] rounded-2xl text-[#5DCAA5]"><FileText size={24} /></div>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${item.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 shadow-sm group-hover:scale-110 transition-transform"><FileText size={24} /></div>
+                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${item.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-orange-50 text-orange-700 border border-orange-200'}`}>
                   {item.status}
                 </div>
               </div>
               
-              <h3 className="font-bold text-white text-lg line-clamp-1">{item.title}</h3>
+              <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-emerald-700 transition-colors">{item.title}</h3>
               <div className="flex flex-wrap gap-2 mt-3 mb-6">
-                <span className="text-[10px] font-bold px-2 py-1 bg-[#064e3b] rounded-lg text-[#6ee7b7]">{item.course_code || item.department}</span>
-                <span className="text-[10px] font-bold px-2 py-1 bg-[#064e3b] rounded-lg text-[#6ee7b7]">{item.semester} Sem</span>
+                <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 rounded-lg text-slate-700 uppercase">{item.course_code || item.department}</span>
+                <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 rounded-lg text-slate-700 uppercase">{item.semester} Sem</span>
               </div>
 
-              <div className="mt-auto grid grid-cols-3 gap-2 border-t border-white/5 pt-4">
+              <div className="mt-auto grid grid-cols-3 gap-2 border-t border-slate-100 pt-4">
                 <Link 
                   href={`/resource/${item.id}`}
-                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors cursor-pointer text-xs font-bold"
+                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors cursor-pointer text-xs font-bold"
                 >
                   <Eye size={14} /> View
                 </Link>
                 <button 
                   onClick={() => { setEditResource(item); setEditFile(null); setShowEditModal(true); }}
-                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors cursor-pointer text-xs font-bold"
+                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors cursor-pointer text-xs font-bold"
                 >
                   <Edit2 size={14} /> Edit
                 </button>
                 <button 
                   onClick={() => handleDelete(item.id)}
-                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors cursor-pointer text-xs font-bold"
+                  className="flex items-center justify-center gap-1 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition-colors cursor-pointer text-xs font-bold"
                 >
                   <Trash2 size={14} /> Delete
                 </button>
@@ -307,51 +307,51 @@ export default function UploadsClient() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#022c22] w-full max-w-xl rounded-3xl border border-[#5DCAA5]/20 shadow-2xl overflow-hidden"
+              className="bg-white w-full max-w-xl rounded-3xl border border-gray-200 shadow-2xl overflow-hidden"
             >
-              <div className="p-6 border-b border-[#5DCAA5]/10 flex justify-between items-center">
-                <h2 className="text-xl font-black text-white">Upload Material</h2>
-                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-[#064e3b] rounded-full text-[#6ee7b7] cursor-pointer"><X size={20}/></button>
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="text-xl font-black text-gray-900">Upload Material</h2>
+                <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 cursor-pointer"><X size={20}/></button>
               </div>
 
               <form onSubmit={handleUpload} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-[10px] font-black text-[#5DCAA5] uppercase tracking-widest mb-2 ml-2">Resource Title</label>
+                  <label className="block text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2 ml-2">Resource Title</label>
                   <input 
                     type="text" required value={uploadData.title} onChange={e => setUploadData({...uploadData, title: e.target.value})}
                     placeholder="e.g., Chapter 1 Summary"
-                    className="w-full px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none focus:border-[#5DCAA5] transition-all"
+                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <select 
                     required value={uploadData.dept} onChange={e => setUploadData({...uploadData, dept: e.target.value})}
-                    className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
+                    className="px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none cursor-pointer focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   >
                     <option value="">Dept</option>
                     {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={uploadData.semester} onChange={e => setUploadData({...uploadData, semester: e.target.value})}
-                    className="px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl text-white outline-none cursor-pointer"
+                    className="px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none cursor-pointer focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   >
                     <option value="">Semester</option>
                     {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
                 </div>
 
-                <div className="border-2 border-dashed border-[#5DCAA5]/20 rounded-3xl p-8 text-center bg-[#064e3b]/50">
+                <div className="border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-3xl p-8 text-center bg-gray-50 transition-colors">
                   <input 
                     type="file" id="fileUpload" className="hidden" 
                     onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
                   />
                   <label htmlFor="fileUpload" className="cursor-pointer group">
-                    <div className="w-12 h-12 bg-[#5DCAA5]/10 text-[#5DCAA5] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform shadow-sm">
                       <Upload size={24} />
                     </div>
-                    <p className="text-sm font-bold text-white">{file ? file.name : "Click to select file"}</p>
-                    <p className="text-[10px] text-[#6ee7b7] mt-1">PDF, Image or Docs (Max 10MB)</p>
+                    <p className="text-sm font-bold text-gray-900">{file ? file.name : "Click to select file"}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">PDF, Image or Docs (Max 10MB)</p>
                   </label>
                 </div>
 
@@ -374,33 +374,33 @@ export default function UploadsClient() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#022c22] w-full max-w-xl rounded-3xl border border-blue-500/20 shadow-2xl overflow-hidden"
+              className="bg-white w-full max-w-xl rounded-3xl border border-gray-200 shadow-2xl overflow-hidden"
             >
-              <div className="p-6 border-b border-blue-500/10 flex justify-between items-center">
-                <h2 className="text-xl font-black text-white">Edit Resource metadata</h2>
-                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-[#064e3b] rounded-full text-[#6ee7b7] cursor-pointer"><X size={20}/></button>
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h2 className="text-xl font-black text-gray-900">Edit Resource metadata</h2>
+                <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 cursor-pointer"><X size={20}/></button>
               </div>
 
               <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 ml-2">Resource Title</label>
+                  <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 ml-2">Resource Title</label>
                   <input 
                     type="text" required value={editResource.title || ""} onChange={e => setEditResource({...editResource, title: e.target.value})}
-                    className="w-full px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none focus:border-blue-500 transition-all"
+                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <select 
                     required value={editResource.department || ""} onChange={e => setEditResource({...editResource, department: e.target.value})}
-                    className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
+                    className="px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none cursor-pointer focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   >
                     <option value="">Dept</option>
                     {departments.map((d: any) => <option key={d.code} value={d.code}>{d.code}</option>)}
                   </select>
                   <select 
                     required value={editResource.semester || ""} onChange={e => setEditResource({...editResource, semester: e.target.value})}
-                    className="px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none cursor-pointer"
+                    className="px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none cursor-pointer focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   >
                     <option value="">Semester</option>
                     {semesters.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
@@ -408,23 +408,25 @@ export default function UploadsClient() {
                 </div>
                 
                 <div>
-                  <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 ml-2">Course Code</label>
+                  <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 ml-2">Course Code</label>
                   <input 
                     type="text" value={editResource.course_code || ""} onChange={e => setEditResource({...editResource, course_code: e.target.value})}
-                    className="w-full px-5 py-3.5 bg-[#064e3b] border border-blue-500/30 rounded-2xl text-white outline-none focus:border-blue-500 transition-all"
+                    className="w-full px-5 py-3.5 bg-gray-50 border border-gray-300 rounded-2xl text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
 
-                <div className="border border-dashed border-blue-500/30 rounded-2xl p-4 bg-[#064e3b]/50">
-                  <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Replace File (Optional)</label>
+                <div className="border border-dashed border-gray-300 hover:border-blue-500 rounded-2xl p-4 bg-gray-50 transition-colors">
+                  <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Replace File (Optional)</label>
                   <input 
                     type="file" id="editFileUpload" className="hidden" 
                     onChange={e => setEditFile(e.target.files ? e.target.files[0] : null)}
                   />
-                  <label htmlFor="editFileUpload" className="cursor-pointer flex flex-col items-center justify-center py-4 text-center">
-                    <Upload size={20} className="text-blue-400 mb-2" />
-                    <p className="text-sm font-bold text-white">{editFile ? editFile.name : "Click to select a new file"}</p>
-                    <p className="text-[10px] text-[#6ee7b7] mt-1">Leaves original file if empty</p>
+                  <label htmlFor="editFileUpload" className="cursor-pointer flex flex-col items-center justify-center py-4 text-center group">
+                    <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                      <Upload size={20} />
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">{editFile ? editFile.name : "Click to select a new file"}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Leaves original file if empty</p>
                   </label>
                 </div>
 
