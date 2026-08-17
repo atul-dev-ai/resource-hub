@@ -6,6 +6,7 @@ import HowItWorksSection from "@/components/HowItWorksSection";
 import ResourcesSection from "@/components/ResourcesSection";
 import DepartmentsSection from "@/components/DepartmentsSection";
 import TrendingResources from "@/components/TrendingResources";
+import TopContributors from "@/components/TopContributors";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -37,6 +38,9 @@ export default function Home() {
 
       {/* How It Works Section */}
       <HowItWorksSection />
+      
+      {/* Top Contributors Section */}
+      <TopContributors />
       
       {/* Footer */}
       <Footer />

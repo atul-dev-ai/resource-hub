@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { Redis } from "@upstash/redis";
 
-const CACHE_KEY = "approved_resources";
+const CACHE_KEY = "approved_resources_v2";
 const CACHE_TTL = 60 * 60 * 24; // 24 hours in seconds
 
 export async function getApprovedResources() {
@@ -39,7 +39,7 @@ export async function getApprovedResources() {
     
     const { data, error } = await supabase
       .from("resources")
-      .select(`*, profiles(full_name)`)
+      .select(`*, profiles(id, full_name, department, batch_initial, avatar_url)`)
       .eq("status", "approved")
       .order("created_at", { ascending: false });
 
