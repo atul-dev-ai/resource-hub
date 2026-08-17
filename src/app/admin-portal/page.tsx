@@ -1,31 +1,20 @@
-"use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
 
-export default function AdminPortalRedirect() {
-  const router = useRouter();
-  const supabase = createClient();
+export default async function AdminPortalRedirect() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    const redirect = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      const { data } = await supabase.from("profiles").select("student_id, role").eq("id", user.id).single();
-      
-      if (!data || !['super_admin', 'admin', 'moderator'].includes(data.role)) {
-        router.push("/student-portal");
-        return;
-      }
+  if (!user) {
+    redirect("/login");
+  }
 
-      const studentId = data?.student_id || "admin";
-      router.push(`/admin-portal/${studentId}`);
-    };
-    redirect();
-  }, [router, supabase]);
+  const { data } = await supabase.from("profiles").select("student_id, role").eq("id", user.id).single();
+  
+  if (!data || !['super_admin', 'admin', 'moderator'].includes(data.role)) {
+    redirect("/student-portal");
+  }
 
-  return <div className="flex h-screen items-center justify-center bg-gray-50 text-pink-700 font-bold">Loading Admin Portal...</div>;
+  const studentId = data?.student_id || "admin";
+  redirect(`/admin-portal/${studentId}`);
 }
