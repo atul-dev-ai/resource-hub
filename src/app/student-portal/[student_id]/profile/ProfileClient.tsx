@@ -12,6 +12,27 @@ import { logActivity } from "@/utils/logger"; // Activity tracker added
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getStudentProfile, invalidateStudentProfile } from "@/app/actions/studentActions";
 
+export function getAutoSemester(batch: string) {
+  if (!batch || batch.length < 3) return "";
+  const startYear = parseInt(batch.substring(0, 2), 10);
+  const startSem = parseInt(batch.substring(2, 3), 10);
+  if (isNaN(startYear) || isNaN(startSem)) return "";
+  
+  const currentDate = new Date();
+  const currentYY = currentDate.getFullYear() % 100;
+  const currentMonth = currentDate.getMonth() + 1;
+  let currentSem = 1;
+  if (currentMonth >= 1 && currentMonth <= 4) currentSem = 1;
+  else if (currentMonth >= 5 && currentMonth <= 8) currentSem = 2;
+  else currentSem = 3;
+  
+  let semestersPassed = (currentYY - startYear) * 3 + (currentSem - startSem);
+  let currentSemesterNumber = semestersPassed + 1;
+  if (currentSemesterNumber < 1) currentSemesterNumber = 1;
+  
+  return currentSemesterNumber + (["st","nd","rd"][((currentSemesterNumber+90)%100-10)%10-1]||"th");
+}
+
 export default function ProfileClient() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +130,7 @@ export default function ProfileClient() {
         full_name: profile.full_name,
         phone: profile.phone,
         section: profile.section,
+        semester: profile.semester, // Now saving semester as well
         student_id: profile.student_id,
         avatar_url: finalAvatarUrl
       }).eq("id", userAuth.id);
@@ -223,6 +245,29 @@ export default function ProfileClient() {
             <label className="block text-xs font-black text-[#5DCAA5] uppercase tracking-widest mb-2">Section</label>
             <input type="text" value={profile.section} onChange={e => setProfile({...profile, section: e.target.value})} placeholder="e.g. PC-A" className="w-full px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl focus:border-[#5DCAA5] focus:ring-2 focus:ring-[#5DCAA5]/20 outline-none transition-all text-white font-bold" />
           </div>
+          <div className="md:col-span-2 lg:col-span-1">
+            <label className="block text-xs font-black text-[#5DCAA5] uppercase tracking-widest mb-2 flex justify-between items-center">
+              Semester
+              <button 
+                type="button" 
+                onClick={() => setProfile({...profile, semester: ""})}
+                className="text-[10px] bg-[#5DCAA5]/20 px-2 py-0.5 rounded text-[#5DCAA5] hover:bg-[#5DCAA5]/30 transition-colors"
+                title="Clear field to auto-calculate based on batch"
+              >
+                Set Auto
+              </button>
+            </label>
+            <input 
+              type="text" 
+              value={profile.semester} 
+              onChange={e => setProfile({...profile, semester: e.target.value})} 
+              placeholder={`Auto: ${getAutoSemester(profile.batch_initial)}`} 
+              className="w-full px-5 py-3.5 bg-[#064e3b] border border-[#5DCAA5]/30 rounded-2xl focus:border-[#5DCAA5] focus:ring-2 focus:ring-[#5DCAA5]/20 outline-none transition-all text-white font-bold" 
+            />
+            <p className="text-[10px] text-[#5DCAA5]/70 mt-1">
+              {profile.semester ? "Manual override active." : `Auto-updating based on Batch ${profile.batch_initial}`}
+            </p>
+          </div>
         </div>
 
         <h2 className="text-lg font-black text-white mb-6 pt-6 border-t border-[#5DCAA5]/10 flex items-center gap-2">
@@ -242,13 +287,6 @@ export default function ProfileClient() {
             <div className="relative">
               <BookOpen size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6ee7b7]" />
               <input disabled value={profile.department} className="w-full pl-11 pr-4 py-3 bg-[#022c22] border border-[#6ee7b7]/10 rounded-xl cursor-not-allowed text-[#6ee7b7] font-bold text-sm" />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-[#6ee7b7] uppercase tracking-widest mb-2">Semester</label>
-            <div className="relative">
-              <Layers size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#6ee7b7]" />
-              <input disabled value={profile.semester} className="w-full pl-11 pr-4 py-3 bg-[#022c22] border border-[#6ee7b7]/10 rounded-xl cursor-not-allowed text-[#6ee7b7] font-bold text-sm" />
             </div>
           </div>
           <div>
