@@ -267,7 +267,7 @@ export async function getStudentRoutineData() {
   if (!session?.user) throw new Error("Unauthorized");
 
   const userId = session.user.id;
-  const CACHE_KEY = `student_routine_${userId}`;
+  const CACHE_KEY = `student_routine_v2_${userId}`;
   const redis = getRedis();
 
   if (redis) {
