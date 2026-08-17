@@ -360,7 +360,7 @@ export default function ResourcesSection() {
                       <div className="flex flex-wrap gap-2 mb-6">
                         <span className="text-xs text-gray-300 bg-black/30 px-2 py-1 rounded-md">{dept}</span>
                         <span className="text-xs text-gray-300 bg-black/30 px-2 py-1 rounded-md">{sem}</span>
-                        <span className="text-xs text-gray-300 bg-black/30 px-2 py-1 rounded-md line-clamp-1 max-w-[120px]" title={course}>{course}</span>
+                        <span className="inline-block text-xs text-gray-300 bg-black/30 px-2 py-1 rounded-md truncate max-w-[150px] align-middle" title={course}>{course}</span>
                       </div>
 
                       <div className="mt-auto flex flex-col gap-4">
