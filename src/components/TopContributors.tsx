@@ -109,9 +109,16 @@ export default function TopContributors() {
                   className="bg-white/5 border border-white/10 backdrop-blur-md rounded-3xl p-6 hover:bg-white/10 hover:border-green-500/30 transition-all duration-300 group flex flex-col items-center text-center shadow-xl relative overflow-hidden"
                 >
                   {/* Rank Badge */}
-                  <div className={`absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full border ${medalColor} backdrop-blur-md`}>
+                  <div className={`absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full border ${medalColor} backdrop-blur-md z-10`}>
                     <span className="font-black text-lg">#{index + 1}</span>
                   </div>
+                  
+                  {/* Medal Icon (1st Place Only) */}
+                  {isFirst && (
+                    <div className="absolute top-4 left-4 flex items-center justify-center w-10 h-10 text-amber-400 z-10">
+                      <Award size={32} className="drop-shadow-lg" />
+                    </div>
+                  )}
 
                   {/* Avatar */}
                   <div className="relative mb-5 mt-2">
@@ -124,11 +131,6 @@ export default function TopContributors() {
                         </span>
                       )}
                     </div>
-                    {isFirst && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-amber-400">
-                        <Award size={32} className="drop-shadow-lg" />
-                      </div>
-                    )}
                   </div>
 
                   {/* User Info */}
