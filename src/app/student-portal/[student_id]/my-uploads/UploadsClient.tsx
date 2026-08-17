@@ -30,7 +30,7 @@ export default function UploadsClient() {
   
   // Form States for Upload
   const [showModal, setShowModal] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploadData, setUploadData] = useState({
     title: "",
     dept: "",
@@ -42,7 +42,7 @@ export default function UploadsClient() {
   // Form States for Edit
   const [showEditModal, setShowEditModal] = useState(false);
   const [editResource, setEditResource] = useState<any>(null);
-  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editFiles, setEditFiles] = useState<File[]>([]);
 
   // Security: Rate Limiting state
   const [lastUploadTime, setLastUploadTime] = useState(0);
@@ -74,9 +74,11 @@ export default function UploadsClient() {
       toast.error("Please wait 30 seconds before another upload.");
       return;
     }
-    if (!file) return toast.error("Please select a file.");
-    if (file.size > 10 * 1024 * 1024) { 
-      return toast.error("File size exceeds 10MB limit.");
+    if (files.length === 0) return toast.error("Please select at least one file.");
+    
+    // Check sizes
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024) return toast.error(`File ${f.name} exceeds 10MB limit.`);
     }
 
     setIsSubmitting(true);
@@ -85,18 +87,22 @@ export default function UploadsClient() {
     try {
       if (!userAuth) throw new Error("Session expired.");
 
-      const fileName = `${userAuth.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from("academic_resources")
-        .upload(fileName, file);
+      const fileUrls = [];
+      for (const f of files) {
+        const fileName = `${userAuth.id}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const { error: storageError } = await supabase.storage
+          .from("academic_resources")
+          .upload(fileName, f);
 
-      if (storageError) throw storageError;
-      
-      const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(fileName);
+        if (storageError) throw storageError;
+        
+        const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(fileName);
+        fileUrls.push(publicUrl);
+      }
 
       const { data, error: dbError } = await supabase.from("resources").insert([{
         title: uploadData.title,
-        file_urls: [publicUrl],
+        file_urls: fileUrls,
         department: uploadData.dept,
         semester: uploadData.semester,
         course_code: uploadData.course || null,
@@ -135,29 +141,32 @@ export default function UploadsClient() {
     try {
       if (!userAuth) throw new Error("Session expired.");
 
-      let newPublicUrl = editResource.file_urls?.[0];
+      let newPublicUrls = editResource.file_urls;
 
       // Handle new file upload if selected
-      if (editFile) {
-        if (editFile.size > 10 * 1024 * 1024) throw new Error("File size exceeds 10MB limit.");
-        
-        let finalFile = editFile;
-        // Optimize if image
-        if (editFile.type.startsWith("image/")) {
-          try {
-            const compressed = await imageCompression(editFile, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
-            finalFile = new File([compressed], editFile.name, { type: editFile.type });
-          } catch (e) { console.error(e); }
+      if (editFiles.length > 0) {
+        newPublicUrls = [];
+        for (const f of editFiles) {
+          if (f.size > 10 * 1024 * 1024) throw new Error(`File ${f.name} exceeds 10MB limit.`);
+          
+          let finalFile = f;
+          // Optimize if image
+          if (f.type.startsWith("image/")) {
+            try {
+              const compressed = await imageCompression(f, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
+              finalFile = new File([compressed], f.name, { type: f.type });
+            } catch (e) { console.error(e); }
+          }
+
+          const fileName = `${userAuth.id}/${Date.now()}-${finalFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+          const { error: storageError } = await supabase.storage
+            .from("academic_resources")
+            .upload(fileName, finalFile);
+
+          if (storageError) throw storageError;
+          const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(fileName);
+          newPublicUrls.push(publicUrl);
         }
-
-        const fileName = `${userAuth.id}/${Date.now()}-${finalFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from("academic_resources")
-          .upload(fileName, finalFile);
-
-        if (storageError) throw storageError;
-        const { data: { publicUrl } } = supabase.storage.from("academic_resources").getPublicUrl(fileName);
-        newPublicUrl = publicUrl;
       }
 
       const updateData = {
@@ -167,8 +176,8 @@ export default function UploadsClient() {
         course_code: editResource.course_code,
       };
       
-      if (editFile && newPublicUrl) {
-        (updateData as any).file_urls = [newPublicUrl];
+      if (editFiles.length > 0) {
+        (updateData as any).file_urls = newPublicUrls;
       }
 
       const { error } = await supabase
@@ -179,7 +188,7 @@ export default function UploadsClient() {
       if (error) throw error;
 
       setShowEditModal(false);
-      setEditFile(null);
+      setEditFiles([]);
 
       await invalidateStudentUploads(userAuth.id);
       queryClient.invalidateQueries({ queryKey: ["student_uploads"] });
@@ -212,7 +221,7 @@ export default function UploadsClient() {
 
   const resetForm = () => {
     setUploadData({ title: "", dept: "", semester: "", course: "", sessionId: "" });
-    setFile(null);
+    setFiles([]);
   };
 
   if (loading) return <PageSkeleton />;
@@ -284,7 +293,7 @@ export default function UploadsClient() {
                   <Eye size={14} /> View
                 </Link>
                 <button 
-                  onClick={() => { setEditResource(item); setEditFile(null); setShowEditModal(true); }}
+                  onClick={() => { setEditResource(item); setEditFiles([]); setShowEditModal(true); }}
                   className="flex items-center justify-center gap-1 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors cursor-pointer text-xs font-bold"
                 >
                   <Edit2 size={14} /> Edit
@@ -343,15 +352,22 @@ export default function UploadsClient() {
 
                 <div className="border-2 border-dashed border-gray-300 hover:border-emerald-500 rounded-3xl p-8 text-center bg-gray-50 transition-colors">
                   <input 
-                    type="file" id="fileUpload" className="hidden" 
-                    onChange={e => setFile(e.target.files ? e.target.files[0] : null)}
+                    type="file" id="fileUpload" className="hidden" multiple
+                    onChange={e => setFiles(e.target.files ? Array.from(e.target.files) : [])}
                   />
-                  <label htmlFor="fileUpload" className="cursor-pointer group">
+                  <label htmlFor="fileUpload" className="cursor-pointer group block">
                     <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform shadow-sm">
                       <Upload size={24} />
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{file ? file.name : "Click to select file"}</p>
-                    <p className="text-[10px] text-gray-500 mt-1">PDF, Image or Docs (Max 10MB)</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {files.length > 0 ? `${files.length} file(s) selected` : "Click to select files"}
+                    </p>
+                    {files.length > 0 && (
+                      <div className="mt-3 space-y-1 text-xs text-emerald-700 font-medium">
+                        {files.map((f, i) => <div key={i} className="truncate max-w-[200px] mx-auto bg-emerald-50 px-2 py-1 rounded">{f.name}</div>)}
+                      </div>
+                    )}
+                    <p className="text-[10px] text-gray-500 mt-2">PDF, Image or Docs (Max 10MB each)</p>
                   </label>
                 </div>
 
@@ -416,17 +432,24 @@ export default function UploadsClient() {
                 </div>
 
                 <div className="border border-dashed border-gray-300 hover:border-blue-500 rounded-2xl p-4 bg-gray-50 transition-colors">
-                  <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Replace File (Optional)</label>
+                  <label className="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">Replace File(s) (Optional)</label>
                   <input 
-                    type="file" id="editFileUpload" className="hidden" 
-                    onChange={e => setEditFile(e.target.files ? e.target.files[0] : null)}
+                    type="file" id="editFileUpload" className="hidden" multiple
+                    onChange={e => setEditFiles(e.target.files ? Array.from(e.target.files) : [])}
                   />
-                  <label htmlFor="editFileUpload" className="cursor-pointer flex flex-col items-center justify-center py-4 text-center group">
+                  <label htmlFor="editFileUpload" className="cursor-pointer flex flex-col items-center justify-center py-4 text-center group block">
                     <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform shadow-sm">
                       <Upload size={20} />
                     </div>
-                    <p className="text-sm font-bold text-gray-900">{editFile ? editFile.name : "Click to select a new file"}</p>
-                    <p className="text-[10px] text-gray-500 mt-1">Leaves original file if empty</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {editFiles.length > 0 ? `${editFiles.length} file(s) selected` : "Click to select new files"}
+                    </p>
+                    {editFiles.length > 0 && (
+                      <div className="mt-3 space-y-1 text-xs text-blue-700 font-medium">
+                        {editFiles.map((f, i) => <div key={i} className="truncate max-w-[200px] mx-auto bg-blue-50 px-2 py-1 rounded">{f.name}</div>)}
+                      </div>
+                    )}
+                    <p className="text-[10px] text-gray-500 mt-1">Leaves original file(s) if empty</p>
                   </label>
                 </div>
 

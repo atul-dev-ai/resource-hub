@@ -78,7 +78,7 @@ export default function ResourcesPage() {
             <motion.div 
               key={res.id}
               whileHover={{ y: -5 }}
-              className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all group"
+              className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full"
             >
               {/* Card Header: Badge & Icon */}
               <div className="flex justify-between items-start mb-4">
@@ -91,8 +91,8 @@ export default function ResourcesPage() {
               </div>
 
               {/* Title & Info */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2 min-h-[3.5rem]">
+              <div className="space-y-4 flex-grow flex flex-col">
+                <h3 className="text-lg font-bold text-gray-900 leading-snug line-clamp-3 overflow-hidden mb-auto">
                   {res.title}
                 </h3>
                 
