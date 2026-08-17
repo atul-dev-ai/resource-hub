@@ -240,6 +240,27 @@ export async function getClassRoutines() {
   return result;
 }
 
+function getAutoSemester(batch: string) {
+  if (!batch || batch.length < 3) return "";
+  const startYear = parseInt(batch.substring(0, 2), 10);
+  const startSem = parseInt(batch.substring(2, 3), 10);
+  if (isNaN(startYear) || isNaN(startSem)) return "";
+  
+  const currentDate = new Date();
+  const currentYY = currentDate.getFullYear() % 100;
+  const currentMonth = currentDate.getMonth() + 1;
+  let currentSem = 1;
+  if (currentMonth >= 1 && currentMonth <= 4) currentSem = 1;
+  else if (currentMonth >= 5 && currentMonth <= 8) currentSem = 2;
+  else currentSem = 3;
+  
+  let semestersPassed = (currentYY - startYear) * 3 + (currentSem - startSem);
+  let currentSemesterNumber = semestersPassed + 1;
+  if (currentSemesterNumber < 1) currentSemesterNumber = 1;
+  
+  return currentSemesterNumber + (["st","nd","rd"][((currentSemesterNumber+90)%100-10)%10-1]||"th");
+}
+
 export async function getStudentRoutineData() {
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
@@ -258,12 +279,13 @@ export async function getStudentRoutineData() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('department, semester, section, student_id')
+    .select('department, semester, section, student_id, batch_initial')
     .eq('id', userId)
     .single();
 
   let myRoutine: any[] = [];
   if (profile && profile.section) {
+    const currentSemester = profile.semester || getAutoSemester(profile.batch_initial);
     const baseSection = profile.section.replace(/\d$/, '');
     const { data: routineData } = await supabase
       .from('academic_routines')
@@ -273,7 +295,8 @@ export async function getStudentRoutineData() {
         courses(course_code, course_name)
       `)
       .eq('department', profile.department)
-      .eq('semester', profile.semester)
+      .eq('semester', currentSemester)
+      .eq('batch', profile.batch_initial)
       .like('section', `${baseSection}%`) 
       .order('start_time');
       
