@@ -83,8 +83,12 @@ export default function TopContributors() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
-          {/* Top 3 Contributors Grid */}
-          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {/* Top Contributors Grid */}
+          <div className={`lg:col-span-3 grid grid-cols-1 gap-6 ${
+            topContributors.length === 1 ? "max-w-sm mx-auto w-full" : 
+            topContributors.length === 2 ? "sm:grid-cols-2 max-w-2xl mx-auto w-full" : 
+            "sm:grid-cols-2 md:grid-cols-3"
+          }`}>
             {topContributors.map((user, index) => {
               // Medal Colors
               const isFirst = index === 0;
