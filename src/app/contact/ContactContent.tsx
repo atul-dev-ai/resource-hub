@@ -132,7 +132,7 @@ export default function ContactContent() {
                     required
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
                     placeholder="Atul Paul"
                   />
                 </div>
@@ -145,7 +145,7 @@ export default function ContactContent() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
                     placeholder="atul@example.com"
                   />
                 </div>
@@ -160,7 +160,7 @@ export default function ContactContent() {
                   required
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none"
                   placeholder="How can we help you?"
                 />
               </div>
@@ -174,7 +174,7 @@ export default function ContactContent() {
                   required
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-y"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-y"
                   placeholder="Write your message here..."
                 ></textarea>
               </div>
