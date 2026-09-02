@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
         // 1. Generate embedding for the user's question
         const { embedding } = await embed({
-          model: google.textEmbeddingModel('models/text-embedding-004'),
+          model: google.textEmbeddingModel('gemini-embedding-2'),
           value: lastUserMessage,
         });
 
@@ -94,7 +94,7 @@ ${documentText ? `\nHere are relevant excerpts from the user's study material:\n
 
     // Using direct Gemini API for fast and reliable responses
     const result = streamText({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-2.5-flash'),
       system: systemPrompt,
       messages: enhancedMessages,
     });
