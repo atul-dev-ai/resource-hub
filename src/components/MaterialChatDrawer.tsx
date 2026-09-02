@@ -13,7 +13,7 @@ interface MaterialChatDrawerProps {
 }
 
 export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType }: MaterialChatDrawerProps) {
-  const { messages, append, isLoading } = useChat({
+  const { messages, sendMessage, status } = useChat({
     api: '/api/chat',
     body: { fileUrl, fileType },
   } as any) as any;
@@ -21,8 +21,8 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    append({ role: 'user', content: input });
+    if (!input.trim() || status === 'streaming') return;
+    sendMessage({ role: 'user', content: input });
     setInput('');
   };
   
@@ -99,7 +99,7 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                 </div>
               ))}
               
-              {isLoading && messages[messages.length - 1]?.role === 'user' && (
+              {status === 'streaming' && messages[messages.length - 1]?.role === 'user' && (
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
                     <Bot size={16} />
@@ -121,12 +121,12 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a question..."
-                  disabled={isLoading}
+                  disabled={status === 'streaming'}
                   className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm disabled:opacity-50 transition-all"
                 />
                 <button
                   type="submit"
-                  disabled={isLoading || !input.trim()}
+                  disabled={status === 'streaming' || !input.trim()}
                   className="absolute right-2 w-10 h-10 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center shadow-md transition-all"
                 >
                   <Send size={16} className="ml-1" />
