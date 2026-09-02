@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const enhancedMessages = [...messages];
   const isFirstMessage = messages.length > 0 && messages[messages.length - 1].role === 'user' && messages.length === 1;
 
-  if (isFirstMessage && fileData && fileType) {
+  if (isFirstMessage && fileUrl && fileType) {
     const mimeType = fileType.toLowerCase().includes('pdf') ? 'application/pdf' : 'image/jpeg';
     
     // We add the file to the user's message
