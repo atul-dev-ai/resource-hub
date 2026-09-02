@@ -41,10 +41,8 @@ export async function POST(req: Request) {
         const response = await fetch(fileUrl);
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        // Use require to bypass Next.js ESM compiler issues for this specific library
-        const pdfParseModule = require('pdf-parse');
-        const parser = pdfParseModule.PDFParse || pdfParseModule;
-        const pdfData = await parser(buffer);
+        const pdfParse = require('pdf-parse');
+        const pdfData = await pdfParse(buffer);
         documentText = pdfData.text;
       } catch (e) {
         console.error("Error parsing PDF:", e);
