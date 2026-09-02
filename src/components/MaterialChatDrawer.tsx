@@ -4,6 +4,8 @@ import { useChat } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, User as UserIcon, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MaterialChatDrawerProps {
   isOpen: boolean;
@@ -56,7 +58,7 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '100%', opacity: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200"
+            className="fixed right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl z-50 flex flex-col border-l border-slate-200"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
@@ -93,12 +95,20 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                   <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${m.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-green-100 text-green-600'}`}>
                     {m.role === 'user' ? <UserIcon size={16} /> : <Bot size={16} />}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl p-4 text-sm whitespace-pre-wrap ${
+                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${
                     m.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                      : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200'
+                      ? 'bg-indigo-600 text-white rounded-tr-sm whitespace-pre-wrap' 
+                      : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200 prose prose-sm prose-slate max-w-none'
                   }`}>
-                    {m.content || (m.parts && m.parts.map((p: any, i: number) => p.type === 'text' ? p.text : '').join('')) || ''}
+                    {m.role === 'user' ? (
+                      m.content || (m.parts && m.parts.map((p: any, i: number) => p.type === 'text' ? p.text : '').join('')) || ''
+                    ) : (
+                      <div className="markdown-body [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-3 [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:mb-3 [&>h1]:text-lg [&>h1]:font-bold [&>h2]:text-base [&>h2]:font-bold [&>h3]:font-bold [&>table]:w-full [&>table]:border-collapse [&>table]:mb-3 [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-200 [&_th]:p-2 [&_td]:border [&_td]:border-slate-300 [&_td]:p-2 [&_code]:bg-slate-200 [&_code]:px-1 [&_code]:rounded">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {m.content || (m.parts && m.parts.map((p: any, i: number) => p.type === 'text' ? p.text : '').join('')) || ''}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
