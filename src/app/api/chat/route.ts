@@ -85,12 +85,16 @@ export async function POST(req: Request) {
 Your goal is to help them understand their course materials.
 Always provide accurate, educational, and structured responses.
 Format your responses using Markdown.
-${documentText ? `\nHere is the extracted text from the user's study material (PDF):\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : ''}`;
+${documentText ? `\nHere are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : ''}`;
 
   try {
-    // Using a specific free model that is fast and handles large context windows (PDFs) well
+    const google = createGoogleGenerativeAI({
+      apiKey: process.env.GEMINI_API_KEY || '',
+    });
+
+    // Using direct Gemini API for fast and reliable responses
     const result = streamText({
-      model: openrouter('google/gemini-1.5-flash:free'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: enhancedMessages,
     });
