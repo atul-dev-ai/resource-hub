@@ -1,6 +1,5 @@
 import { streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOpenAI } from '@ai-sdk/openai';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -8,15 +7,9 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages, fileUrl, fileType } = await req.json();
 
-  // Create Google Gemini client
+  // Create Google Gemini client directly as requested
   const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
-  });
-
-  // Create OpenRouter client (as fallback)
-  const openrouter = createOpenAI({
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey: process.env.OPENROUTER_API_KEY || '',
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || '',
   });
 
   // Prepare system prompt
@@ -56,10 +49,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    // OpenRouter handles fallback automatically!
-    // It will first try Gemini 1.5 Flash. If it fails or hits rate limits, it falls back to Llama 3 8B Free.
+    // Using Gemini model directly
     const result = streamText({
-      model: openrouter('google/gemini-flash-1.5,meta-llama/llama-3-8b-instruct:free'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: enhancedMessages,
     });

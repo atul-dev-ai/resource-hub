@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
+import { X, Send, Bot, User as UserIcon, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface MaterialChatDrawerProps {
@@ -61,8 +61,8 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                   <Bot size={22} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 leading-tight">AI Study Assistant</h3>
-                  <p className="text-xs text-slate-500">Ask questions or generate notes</p>
+                  <h3 className="font-bold text-slate-800 leading-tight">MRINMOYEE AI</h3>
+                  <p className="text-xs text-slate-500">Atul Paul's Assistant</p>
                 </div>
               </div>
               <button 
@@ -79,7 +79,7 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                 <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-4">
                   <Bot size={48} className="text-slate-300" />
                   <p className="max-w-[250px]">
-                    Hi! I'm your AI assistant. I've analyzed this material. What would you like to know? Try asking for a summary or study notes!
+                    Hi! I'm MRINMOYEE AI. I've analyzed this material. What would you like to know? Try asking for a summary or study notes!
                   </p>
                 </div>
               )}
@@ -99,14 +99,14 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                 </div>
               ))}
               
-              {status === 'streaming' && messages[messages.length - 1]?.role === 'user' && (
+              {(status === 'submitted' || status === 'streaming') && messages[messages.length - 1]?.role === 'user' && (
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                    <Bot size={16} />
+                    <Sparkles size={16} />
                   </div>
-                  <div className="bg-slate-100 rounded-2xl p-4 rounded-tl-sm border border-slate-200 flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin text-green-600" />
-                    <span className="text-xs text-slate-500 font-medium">Thinking...</span>
+                  <div className="bg-slate-900 rounded-2xl px-5 py-3 rounded-tl-sm flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-500/30 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-purple-500/10 animate-pulse"></div>
+                    <Sparkles size={20} className="text-purple-300 animate-pulse drop-shadow-[0_0_8px_rgba(168,85,247,0.9)] relative z-10" />
                   </div>
                 </div>
               )}
