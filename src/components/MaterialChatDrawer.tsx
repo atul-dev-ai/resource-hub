@@ -13,7 +13,7 @@ interface MaterialChatDrawerProps {
 }
 
 export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType }: MaterialChatDrawerProps) {
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     api: '/api/chat',
     body: { fileUrl, fileType },
   } as any) as any;
@@ -108,6 +108,12 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                     <div className="absolute inset-0 bg-purple-500/10 animate-pulse"></div>
                     <Sparkles size={20} className="text-purple-300 animate-pulse drop-shadow-[0_0_8px_rgba(168,85,247,0.9)] relative z-10" />
                   </div>
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 text-sm flex flex-col gap-1 items-center text-center">
+                  <span className="font-bold">Error connecting to AI</span>
+                  <span>{error.message || "Please check your API key."}</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
