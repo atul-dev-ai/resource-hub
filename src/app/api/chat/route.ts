@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   });
 
   // Prepare system prompt
-  const systemPrompt = "You are an expert AI tutor and study assistant inside the 'Varsity Resource Hub' platform. A student is asking you questions about a specific study material they are viewing. Analyze the material and answer their questions clearly, concisely, and accurately. If they ask for notes, provide well-structured, easy-to-understand study notes.";
+
 
   // Fetch the file if URL is provided
   let fileData: Uint8Array | undefined;
@@ -33,21 +33,43 @@ export async function POST(req: Request) {
   const enhancedMessages = [...messages];
   const isFirstMessage = messages.length > 0 && messages[messages.length - 1].role === 'user' && messages.length === 1;
 
+  let documentText = '';
+  
   if (isFirstMessage && fileUrl && fileType) {
-    const mimeType = fileType.toLowerCase().includes('pdf') ? 'application/pdf' : 'image/jpeg';
-    
-    // We add the file to the user's message
-    enhancedMessages[0] = {
-      ...enhancedMessages[0],
-      experimental_attachments: [
-        {
-          name: 'Study Material',
-          contentType: mimeType,
-          url: fileUrl,
-        }
-      ]
-    };
+    if (fileType.toLowerCase().includes('pdf')) {
+      try {
+        const response = await fetch(fileUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        // Use require to bypass Next.js ESM compiler issues for this specific library
+        const pdfParseModule = require('pdf-parse');
+        const parser = pdfParseModule.PDFParse || pdfParseModule;
+        const pdfData = await parser(buffer);
+        documentText = pdfData.text;
+      } catch (e) {
+        console.error("Error parsing PDF:", e);
+      }
+    } else {
+      // It's an image, attach it for vision models
+      const mimeType = 'image/jpeg';
+      enhancedMessages[0] = {
+        ...enhancedMessages[0],
+        experimental_attachments: [
+          {
+            name: 'Study Material',
+            contentType: mimeType,
+            url: fileUrl,
+          }
+        ]
+      };
+    }
   }
+
+  const systemPrompt = `You are an intelligent study assistant for a university student.
+Your goal is to help them understand their course materials.
+Always provide accurate, educational, and structured responses.
+Format your responses using Markdown.
+${documentText ? `\nHere is the extracted text from the user's study material (PDF):\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : ''}`;
 
   try {
     // Using OpenRouter's auto-routed free model
