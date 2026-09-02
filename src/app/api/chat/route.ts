@@ -1,5 +1,5 @@
 import { streamText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenAI } from '@ai-sdk/openai';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -7,9 +7,10 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages, fileUrl, fileType } = await req.json();
 
-  // Create Google Gemini client directly as requested
-  const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || '',
+  // Create OpenRouter client
+  const openrouter = createOpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY || '',
   });
 
   // Prepare system prompt
@@ -49,9 +50,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Using Gemini model directly
+    // Using OpenRouter's free Gemini model
     const result = streamText({
-      model: google('gemini-1.5-flash'),
+      model: openrouter('google/gemini-1.5-flash:free'),
       system: systemPrompt,
       messages: enhancedMessages,
     });
