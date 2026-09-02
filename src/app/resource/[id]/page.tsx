@@ -4,6 +4,7 @@ import { Download, Share2, BookmarkPlus, Flag, FileText, Calendar, Eye, User, La
 import Link from 'next/link';
 import ResourceViewer from "@/components/viewers/ResourceViewer";
 import DownloadButton from "@/components/DownloadButton";
+import ResourceAIAssistant from "@/components/ResourceAIAssistant";
 
 export default async function ResourceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -111,6 +112,9 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
             <div className="bg-[#022c22] rounded-3xl p-6 shadow-xl border border-[#5DCAA5]/20">
               <h3 className="font-black text-white mb-4 tracking-wide">Actions</h3>
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <ResourceAIAssistant fileUrl={fileUrl} fileType={resource.resource_type || ''} />
+                </div>
                 {fileUrls.map((url: string, index: number) => (
                   <DownloadButton 
                     key={index} 
