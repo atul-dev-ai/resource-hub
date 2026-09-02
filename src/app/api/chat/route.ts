@@ -50,9 +50,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Using OpenRouter's free Gemini model
+    // Using OpenRouter's auto-routed free model
     const result = streamText({
-      model: openrouter('google/gemini-1.5-flash:free'),
+      model: openrouter('openrouter/free'),
       system: systemPrompt,
       messages: enhancedMessages,
     });
