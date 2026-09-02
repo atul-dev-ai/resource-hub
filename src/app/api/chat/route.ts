@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: enhancedMessages,
     });
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error("Chat API Error:", error);
     return new Response(JSON.stringify({ error: "Failed to process chat." }), { status: 500 });
