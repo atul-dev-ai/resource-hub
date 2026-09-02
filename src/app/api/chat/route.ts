@@ -70,9 +70,9 @@ Format your responses using Markdown.
 ${documentText ? `\nHere is the extracted text from the user's study material (PDF):\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : ''}`;
 
   try {
-    // Using OpenRouter's auto-routed free model
+    // Using a specific free model that is fast and handles large context windows (PDFs) well
     const result = streamText({
-      model: openrouter('openrouter/free'),
+      model: openrouter('google/gemini-1.5-flash:free'),
       system: systemPrompt,
       messages: enhancedMessages,
     });
@@ -97,8 +97,14 @@ ${documentText ? `\nHere is the extracted text from the user's study material (P
         'X-Vercel-AI-Data-Stream': 'v1',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Chat API Error:", error);
-    return new Response(JSON.stringify({ error: "Failed to process chat." }), { status: 500 });
+    return new Response(
+      JSON.stringify({ 
+        error: "Failed to process chat.", 
+        details: error.message || error.toString() 
+      }), 
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }

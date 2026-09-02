@@ -125,9 +125,11 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                 </div>
               )}
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 text-sm flex flex-col gap-1 items-center text-center">
-                  <span className="font-bold">Error connecting to AI</span>
-                  <span>{error.message || "Please check your API key."}</span>
+                <div className="p-4 m-5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-center text-sm font-medium">
+                  <p>Error connecting to AI</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {error.message}
+                  </p>
                 </div>
               )}
               <div ref={messagesEndRef} />
