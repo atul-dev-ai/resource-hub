@@ -19,6 +19,10 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
   } as any) as any;
   const [input, setInput] = useState('');
 
+  useEffect(() => {
+    console.log("Current messages:", messages);
+  }, [messages]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || status === 'streaming') return;
@@ -94,7 +98,7 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                       ? 'bg-indigo-600 text-white rounded-tr-sm' 
                       : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200'
                   }`}>
-                    {m.content}
+                    {m.content || (m.parts && m.parts.map((p: any, i: number) => p.type === 'text' ? p.text : '').join('')) || ''}
                   </div>
                 </div>
               ))}
