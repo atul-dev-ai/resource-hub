@@ -105,8 +105,11 @@ ${documentText ? `\nHere are relevant excerpts from the user's study material:\n
           for await (const chunk of result.textStream) {
             controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(chunk)}\n`));
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error("Stream error:", e);
+          const errorMsg = e.message || "Failed to generate AI response. Please check your Gemini API key.";
+          // Format 3 is the Vercel AI Data Stream Protocol error format
+          controller.enqueue(new TextEncoder().encode(`3:${JSON.stringify(errorMsg)}\n`));
         } finally {
           controller.close();
         }
