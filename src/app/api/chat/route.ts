@@ -1,5 +1,7 @@
-import { streamText } from 'ai';
+import { streamText, embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { Index } from '@upstash/vector';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -13,41 +15,57 @@ export async function POST(req: Request) {
     apiKey: process.env.OPENROUTER_API_KEY || '',
   });
 
-  // Prepare system prompt
-
-
-  // Fetch the file if URL is provided
-  let fileData: Uint8Array | undefined;
-  if (fileUrl) {
-    try {
-      const response = await fetch(fileUrl);
-      if (response.ok) {
-        fileData = new Uint8Array(await response.arrayBuffer());
-      }
-    } catch (e) {
-      console.error("Failed to fetch file for AI context:", e);
-    }
-  }
-
   // Inject the file data into the first user message if it's a new conversation
   const enhancedMessages = [...messages];
+  const lastUserMessage = messages.length > 0 ? messages[messages.length - 1].content : "";
   const isFirstMessage = messages.length > 0 && messages[messages.length - 1].role === 'user' && messages.length === 1;
 
   let documentText = '';
   
-  if (isFirstMessage && fileUrl && fileType) {
+  if (fileUrl && fileType) {
     if (fileType.toLowerCase().includes('pdf')) {
+      // RAG Retrieval Logic
       try {
-        const response = await fetch(fileUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const pdfParse = require('pdf-parse');
-        const pdfData = await pdfParse(buffer);
-        documentText = pdfData.text;
+        const index = new Index({
+          url: process.env.UPSTASH_VECTOR_REST_URL,
+          token: process.env.UPSTASH_VECTOR_REST_TOKEN,
+        });
+
+        const google = createGoogleGenerativeAI({
+          apiKey: process.env.GEMINI_API_KEY || '',
+        });
+
+        // 1. Generate embedding for the user's question
+        const { embedding } = await embed({
+          model: google.textEmbeddingModel('models/text-embedding-004'),
+          value: lastUserMessage,
+        });
+
+        // 2. Query Upstash Vector
+        const results = await index.query({
+          vector: embedding,
+          topK: 5,
+          includeMetadata: true,
+          filter: `fileUrl = '${fileUrl}'` 
+        });
+
+        if (results && results.length > 0) {
+          // Found chunks in RAG database!
+          const chunks = results.map(r => r.metadata?.text).filter(Boolean);
+          documentText = chunks.join('\n\n...\n\n');
+        } else if (isFirstMessage) {
+          // Fallback: If not indexed yet (e.g. old file), parse the PDF on the fly
+          const response = await fetch(fileUrl);
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const pdfParse = require('pdf-parse');
+          const pdfData = await pdfParse(buffer);
+          documentText = pdfData.text;
+        }
       } catch (e) {
-        console.error("Error parsing PDF:", e);
+        console.error("RAG Retrieval Error:", e);
       }
-    } else {
+    } else if (isFirstMessage) {
       // It's an image, attach it for vision models
       const mimeType = 'image/jpeg';
       enhancedMessages[0] = {

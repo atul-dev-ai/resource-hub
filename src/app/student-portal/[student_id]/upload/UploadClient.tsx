@@ -196,7 +196,7 @@ export default function UploadClient() {
       const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== "");
 
       // 3. SAVE RESOURCE METADATA (DATABASE)
-      const { error: dbError } = await supabase.from("resources").insert([{
+      const { data: insertedResource, error: dbError } = await supabase.from("resources").insert([{
         uploader_id: userAuth.id,
         title: formData.title,
         description: formData.description,
@@ -211,9 +211,24 @@ export default function UploadClient() {
         tags: tagsArray,
         file_urls: uploadedUrls,
         status: 'pending' 
-      }]);
+      }]).select().single();
 
       if (dbError) throw dbError; // এটা ফেইল করলে সরাসরি catch ব্লকে চলে যাবে
+
+      // 4. TRIGGER VECTOR INDEXING FOR RAG
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].type === 'application/pdf' || files[i].name.toLowerCase().endsWith('.pdf')) {
+          // Trigger asynchronously in the background
+          fetch('/api/index-document', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              fileUrl: uploadedUrls[i], 
+              fileId: insertedResource.id.toString() 
+            })
+          }).catch(err => console.error("Background indexing failed:", err));
+        }
+      }
 
       await createNotification({
         target_role: "admin",
