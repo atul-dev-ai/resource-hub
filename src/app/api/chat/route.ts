@@ -57,29 +57,7 @@ export async function POST(req: Request) {
       messages: enhancedMessages,
     });
 
-    // Manually stream Data Stream Protocol which useChat understands natively
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of result.textStream) {
-            if (chunk) {
-              controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(chunk)}\n`));
-            }
-          }
-          controller.close();
-        } catch (err) {
-          console.error(err);
-          controller.close();
-        }
-      }
-    });
-
-    return new Response(stream, { 
-      headers: { 
-        'Content-Type': 'text/plain; charset=utf-8',
-        'x-vercel-ai-data-stream': 'v1'
-      } 
-    });
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error("Chat API Error:", error);
     return new Response(JSON.stringify({ error: "Failed to process chat." }), { status: 500 });

@@ -79,6 +79,11 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
 
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              {/* DEBUG INFO TO SEE RAW STATE */}
+              <div className="text-xs bg-gray-900 text-green-400 p-2 font-mono overflow-auto rounded whitespace-pre-wrap">
+                DEBUG MESSAGES: {JSON.stringify(messages, null, 2)}
+              </div>
+
               {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-4">
                   <Bot size={48} className="text-slate-300" />
