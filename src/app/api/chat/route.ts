@@ -77,7 +77,26 @@ ${documentText ? `\nHere is the extracted text from the user's study material (P
       messages: enhancedMessages,
     });
 
-    return result.toUIMessageStreamResponse();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.textStream) {
+            controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(chunk)}\n`));
+          }
+        } catch (e) {
+          console.error("Stream error:", e);
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Vercel-AI-Data-Stream': 'v1',
+      },
+    });
   } catch (error) {
     console.error("Chat API Error:", error);
     return new Response(JSON.stringify({ error: "Failed to process chat." }), { status: 500 });
