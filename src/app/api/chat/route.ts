@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       }
     }
     
-    // Attach all images or PDFs for vision/document models properly using multi-part content
+    // Attach all images for vision models properly using multi-part content
     // We must do this on EVERY request because the frontend doesn't store the backend-injected file parts
     const firstUserMsgIndex = enhancedMessages.findIndex((m: any) => m.role === 'user');
     
@@ -84,28 +84,18 @@ export async function POST(req: Request) {
       const newContent: any[] = [{ type: 'text', text: firstUserMsg.content as string }];
       
       for (const url of fileUrls) {
-         if (url.toLowerCase().includes('.pdf')) {
-            try {
-               const response = await fetch(url);
-               const arrayBuffer = await response.arrayBuffer();
-               const buffer = Buffer.from(arrayBuffer);
-               newContent.push({
-                 type: 'file',
-                 data: buffer.toString('base64'),
-                 mimeType: 'application/pdf'
-               });
-            } catch (e) {
-               console.error("Failed to fetch PDF buffer for AI:", e);
-            }
-         } else {
+         if (!url.toLowerCase().includes('.pdf')) {
             newContent.push({ type: 'image', image: url });
          }
       }
       
-      enhancedMessages[firstUserMsgIndex] = {
-        ...firstUserMsg,
-        content: newContent
-      };
+      // Only update if we added images
+      if (newContent.length > 1) {
+        enhancedMessages[firstUserMsgIndex] = {
+          ...firstUserMsg,
+          content: newContent
+        };
+      }
     }
   }
 
