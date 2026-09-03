@@ -71,26 +71,44 @@ export async function POST(req: Request) {
       } catch (e) {
         console.error("RAG Retrieval Error:", e);
       }
-    } else if (isFirstMessage) {
-      // It's an image, attach all images for vision models properly using multi-part content
+    }
+    
+    if (isFirstMessage) {
+      // Attach all images or PDFs for vision/document models properly using multi-part content
       const lastUserMsg = enhancedMessages[enhancedMessages.length - 1];
-      const imageParts = fileUrls.map((url: string) => ({ type: 'image', image: url }));
+      const newContent: any[] = [{ type: 'text', text: lastUserMsg.content as string }];
+      
+      for (const url of fileUrls) {
+         if (fileType.toLowerCase().includes('pdf')) {
+            try {
+               const response = await fetch(url);
+               const arrayBuffer = await response.arrayBuffer();
+               const buffer = Buffer.from(arrayBuffer);
+               newContent.push({
+                 type: 'file',
+                 data: buffer.toString('base64'),
+                 mimeType: 'application/pdf'
+               });
+            } catch (e) {
+               console.error("Failed to fetch PDF buffer for AI:", e);
+            }
+         } else {
+            newContent.push({ type: 'image', image: url });
+         }
+      }
       
       enhancedMessages[enhancedMessages.length - 1] = {
         role: 'user',
-        content: [
-          { type: 'text', text: lastUserMsg.content as string },
-          ...imageParts
-        ]
+        content: newContent
       };
     }
   }
 
 let systemPromptContext = '';
-if (documentText) {
+if (isFirstMessage && fileUrls && fileUrls.length > 0) {
+  systemPromptContext = `The user has attached their study material. Please carefully analyze the attached document or images and use it to generate comprehensive notes or answer their questions directly. Extract and format any relevant information.`;
+} else if (documentText) {
   systemPromptContext = `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.`;
-} else if (fileUrls && fileUrls.length > 0 && fileType && !fileType.toLowerCase().includes('pdf')) {
-  systemPromptContext = `The user has attached images of their study material. Please carefully analyze the images and use them to answer their questions directly.`;
 } else {
   systemPromptContext = `The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.`;
 }
