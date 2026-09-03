@@ -66,7 +66,17 @@ export async function getStudentDashboardData() {
     recentResources = resources.slice(0, 5);
   }
 
-  const result = { userName, stats, recentResources };
+  // Fetch the latest or pinned announcement
+  const { data: announcementsData } = await supabase
+    .from("announcements")
+    .select("*, profiles(full_name)")
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const activeAnnouncement = announcementsData && announcementsData.length > 0 ? announcementsData[0] : null;
+
+  const result = { userName, stats, recentResources, activeAnnouncement };
 
   if (redis) {
     try {

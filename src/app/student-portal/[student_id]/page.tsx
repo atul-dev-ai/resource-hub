@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   FileText, CheckCircle, Clock, Eye, 
-  ArrowRight, Download, FileType, CheckCircle2, Clock3, PlusCircle
+  ArrowRight, Download, FileType, CheckCircle2, Clock3, PlusCircle, AlertTriangle, Info
 } from "lucide-react";
 import Link from "next/link";
 import PremiumLoading from "@/components/PremiumLoading";
@@ -37,6 +37,7 @@ export default function StudentDashboard() {
   const userName = data?.userName || "Student";
   const userStats = data?.stats || { total: 0, approved: 0, pending: 0, views: 0 };
   const recentResources = data?.recentResources || [];
+  const activeAnnouncement = data?.activeAnnouncement || null;
 
   if (loading) {
     return <PremiumLoading />;
@@ -57,29 +58,83 @@ export default function StudentDashboard() {
       animate="visible"
       className="max-w-7xl mx-auto space-y-8"
     >
-      {/* Welcome Banner */}
-      <motion.div variants={itemVariants} className="bg-gradient-to-r from-emerald-800 to-emerald-950 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {userName}! 👋</h1>
-          <p className="text-emerald-100 max-w-xl text-sm sm:text-base">
-            Ready to ace your next exam? Check out the latest resources uploaded by your peers or contribute to the community by uploading your own notes.
-          </p>
-          <div className="mt-6 flex gap-4">
-            <Link href={`/student-portal/${student_id}/upload`}>
-              <button className="bg-white text-emerald-900 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-50 transition shadow-sm cursor-pointer">
-                Upload Resource
-              </button>
-            </Link>
-            <Link href={`/student-portal/${student_id}/resources`}>
-              <button className="bg-emerald-500/30 text-white border border-emerald-400/30 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-500/50 transition backdrop-blur-sm cursor-pointer hidden sm:block">
-                Browse All
-              </button>
-            </Link>
+      {/* Welcome Banner / Announcement */}
+      {activeAnnouncement ? (
+        <motion.div variants={itemVariants} className={`rounded-2xl p-6 sm:p-8 shadow-lg relative overflow-hidden flex flex-col justify-center border ${
+          activeAnnouncement.type === 'warning' ? 'bg-orange-50 border-orange-200' :
+          activeAnnouncement.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
+          'bg-blue-50 border-blue-200'
+        }`}>
+          <div className="flex items-start gap-4 z-10 relative">
+            <div className={`p-3 rounded-full flex-shrink-0 ${
+              activeAnnouncement.type === 'warning' ? 'bg-orange-100 text-orange-600' :
+              activeAnnouncement.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+              'bg-blue-100 text-blue-600'
+            }`}>
+              {activeAnnouncement.type === 'warning' ? <AlertTriangle size={28} /> : 
+               activeAnnouncement.type === 'success' ? <CheckCircle size={28} /> : 
+               <Info size={28} />}
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h2 className={`text-xl sm:text-2xl font-bold ${
+                  activeAnnouncement.type === 'warning' ? 'text-orange-900' :
+                  activeAnnouncement.type === 'success' ? 'text-emerald-900' :
+                  'text-blue-900'
+                }`}>
+                  {activeAnnouncement.title}
+                </h2>
+                {activeAnnouncement.is_pinned && (
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                    activeAnnouncement.type === 'warning' ? 'bg-orange-200 text-orange-800' :
+                    activeAnnouncement.type === 'success' ? 'bg-emerald-200 text-emerald-800' :
+                    'bg-blue-200 text-blue-800'
+                  }`}>PINNED</span>
+                )}
+              </div>
+              <p className={`whitespace-pre-wrap text-sm sm:text-base ${
+                  activeAnnouncement.type === 'warning' ? 'text-orange-800' :
+                  activeAnnouncement.type === 'success' ? 'text-emerald-800' :
+                  'text-blue-800'
+                }`}>
+                {activeAnnouncement.body}
+              </p>
+              <p className={`text-xs mt-3 font-medium ${
+                  activeAnnouncement.type === 'warning' ? 'text-orange-600/80' :
+                  activeAnnouncement.type === 'success' ? 'text-emerald-600/80' :
+                  'text-blue-600/80'
+                }`}>
+                Posted by {activeAnnouncement.profiles?.full_name || 'Admin'} • {new Date(activeAnnouncement.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+            </div>
           </div>
-        </div>
-        {/* Background Decorative Pattern */}
-        <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-      </motion.div>
+          {/* Decorative Background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/40 rounded-full blur-3xl -mt-16 -mr-16"></div>
+        </motion.div>
+      ) : (
+        <motion.div variants={itemVariants} className="bg-gradient-to-r from-emerald-800 to-emerald-950 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {userName}! 👋</h1>
+            <p className="text-emerald-100 max-w-xl text-sm sm:text-base">
+              Ready to ace your next exam? Check out the latest resources uploaded by your peers or contribute to the community by uploading your own notes.
+            </p>
+            <div className="mt-6 flex gap-4">
+              <Link href={`/student-portal/${student_id}/upload`}>
+                <button className="bg-white text-emerald-900 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-50 transition shadow-sm cursor-pointer">
+                  Upload Resource
+                </button>
+              </Link>
+              <Link href={`/student-portal/${student_id}/resources`}>
+                <button className="bg-emerald-500/30 text-white border border-emerald-400/30 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-emerald-500/50 transition backdrop-blur-sm cursor-pointer hidden sm:block">
+                  Browse All
+                </button>
+              </Link>
+            </div>
+          </div>
+          {/* Background Decorative Pattern */}
+          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        </motion.div>
+      )}
 
       {/* Quick Stats Grid */}
       <motion.div variants={containerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
