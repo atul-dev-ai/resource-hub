@@ -40,7 +40,7 @@ export default function UploadClient() {
     consent: false
   });
 
-  const resourceTypes = ["Previous Question", "Quiz", "Assignment", "Notes", "Lab Report", "Slide", "Others"];
+  const resourceTypes = ["Previous Question", "Quiz", "Assignment", "Notes", "Lab Report", "Lab Final", "Slide", "Others"];
   const examTypes = ["Mid", "Final", "Quiz", "Viva"];
 
   const { data: meta, isLoading: loadingMeta } = useQuery({
@@ -178,10 +178,15 @@ export default function UploadClient() {
       }
 
       // 2. FILE UPLOAD LOGIC
-      for (const file of files) {
+      const cleanTitle = formData.title.replace(/[^a-zA-Z0-9-]/g, '_').substring(0, 50); // limit length just in case
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const fileExt = file.name.split('.').pop();
-        const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const filePath = `${userAuth.id}/${Date.now()}-${cleanName}.${fileExt}`; // file path in bucket
+        
+        // Append _1, _2 etc. only if there are multiple files
+        const suffix = files.length > 1 ? `_${i + 1}` : '';
+        const fileName = `${cleanTitle}${suffix}.${fileExt}`;
+        const filePath = `${userAuth.id}/${Date.now()}-${fileName}`; // file path in bucket
         
         const { error: uploadError } = await supabase.storage.from("academic_resources").upload(filePath, file);
         if (uploadError) throw uploadError;
