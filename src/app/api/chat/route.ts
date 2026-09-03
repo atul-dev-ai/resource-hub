@@ -99,29 +99,7 @@ ${documentText ? `\nHere are relevant excerpts from the user's study material:\n
       messages: enhancedMessages,
     });
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of result.textStream) {
-            controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(chunk)}\n`));
-          }
-        } catch (e: any) {
-          console.error("Stream error:", e);
-          const errorMsg = e.message || "Failed to generate AI response. Please check your Gemini API key.";
-          // Format 3 is the Vercel AI Data Stream Protocol error format
-          controller.enqueue(new TextEncoder().encode(`3:${JSON.stringify(errorMsg)}\n`));
-        } finally {
-          controller.close();
-        }
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'X-Vercel-AI-Data-Stream': 'v1',
-      },
-    });
+    return result.toUIMessageStreamResponse();
   } catch (error: any) {
     console.error("Chat API Error:", error);
     return new Response(
