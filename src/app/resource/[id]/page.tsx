@@ -46,7 +46,7 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
           
           {/* Left: Preview Area */}
           <div className="lg:w-2/3 h-[500px] sm:h-[700px] lg:h-[85vh] sticky top-24 rounded-3xl shadow-2xl overflow-hidden bg-[#022c22] flex flex-col border border-[#5DCAA5]/20">
-            <ResourceViewer fileUrl={fileUrl} />
+            <ResourceViewer fileUrls={fileUrls} />
           </div>
 
           {/* Right: Information */}
