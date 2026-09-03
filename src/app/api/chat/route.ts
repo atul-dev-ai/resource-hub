@@ -62,7 +62,7 @@ export async function POST(req: Request) {
           const chunks = results.map(r => r.metadata?.text).filter(Boolean);
           documentText = chunks.join('\n\n...\n\n');
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error("RAG Retrieval Error (falling back to direct parse):", e.message || e);
       }
       
@@ -75,8 +75,8 @@ export async function POST(req: Request) {
           const pdfParse = require('pdf-parse');
           const pdfData = await pdfParse(buffer);
           documentText = pdfData.text;
-        } catch (e) {
-          console.error("Direct PDF Parse Error:", e);
+        } catch (e: any) {
+          console.error("Direct PDF Parse Error:", e.message || e);
         }
       }
     }
