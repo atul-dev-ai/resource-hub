@@ -95,8 +95,15 @@ export async function POST(req: Request) {
          }
       }
       
-      // Only update if we added images
-      if (newContent.length > 1) {
+      // Only update if we added images or document text
+      if (newContent.length > 1 || documentText) {
+        if (documentText) {
+          const textMsg = newContent.find((c: any) => c.type === 'text');
+          if (textMsg) {
+            textMsg.text = `${textMsg.text}\n\n--- MATERIAL CONTEXT ---\n${documentText.substring(0, 30000)}\n--- END MATERIAL ---\n\nUse the material context provided above as your primary source of truth to answer the question.`;
+          }
+        }
+        
         enhancedMessages[firstUserMsgIndex] = {
           ...firstUserMsg,
           content: newContent
@@ -105,23 +112,10 @@ export async function POST(req: Request) {
     }
   }
 
-let systemPromptContext = '';
-if (fileUrls && fileUrls.length > 0) {
-  systemPromptContext = `The user has attached their study material. Please carefully analyze the attached document or images and use it to generate comprehensive notes or answer their questions directly. Extract and format any relevant information.`;
-  if (documentText) {
-    systemPromptContext += `\n\nHere are some relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material as well.`;
-  }
-} else {
-  systemPromptContext = `The user is asking a general question. Please use your general knowledge to answer them as best as you can.`;
-}
-
-const systemPrompt = `You are an intelligent study assistant for a university student.
+const systemPrompt = `You are MRINMOYEE AI, an intelligent study assistant for university students.
 Your goal is to help them understand their course materials.
-Always provide accurate, educational, and structured responses.
-Format your responses using Markdown.
-Never say you cannot read or access files or PDFs. The system will automatically extract and provide the relevant text from the user's files to you (or pass the image directly).
-
-${systemPromptContext}`;
+Always provide accurate, educational, and structured responses using Markdown.
+You have been provided with the user's material in the first message (either as text or images). Always reference it. Never ask the user to upload it.`;
 
   try {
     const google = createGoogleGenerativeAI({

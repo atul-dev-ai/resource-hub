@@ -153,7 +153,7 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrls, fileType
                   </div>
                   <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${
                     m.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-sm whitespace-pre-wrap hidden' // Hide the auto-generated user message if it's the first one, or maybe hide all for cleaner UI? Let's just hide the user message if it's the default prompt
+                      ? 'bg-indigo-600 text-white rounded-tr-sm whitespace-pre-wrap'
                       : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200 prose prose-sm prose-slate max-w-none'
                   }`} style={m.role === 'user' && m.content === 'Analyze these uploaded materials and make comprehensive notes.' ? { display: 'none' } : {}}>
                     {m.role === 'user' ? (
