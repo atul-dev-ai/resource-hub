@@ -22,7 +22,13 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrls, fileType
       const saved = localStorage.getItem(chatKey);
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          // Purge legacy message that asks user to upload materials
+          if (parsed.length > 0 && parsed[0].content?.includes('upload the materials')) {
+            localStorage.removeItem(chatKey);
+            return [];
+          }
+          return parsed;
         } catch (e) {}
       }
     }
@@ -37,13 +43,12 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrls, fileType
   const [input, setInput] = useState('');
   const hasSentInitial = useRef(false);
 
-  // Auto-trigger note generation on first open
+  // Track if we just opened
   useEffect(() => {
-    if (isOpen && messages.length === 0 && !hasSentInitial.current) {
+    if (isOpen) {
       hasSentInitial.current = true;
-      sendMessage({ role: 'user', content: 'Analyze these uploaded materials and make comprehensive notes.' });
     }
-  }, [isOpen, messages.length, sendMessage]);
+  }, [isOpen]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -109,11 +114,35 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrls, fileType
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
               {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-4">
-                  <Bot size={48} className="text-slate-300" />
-                  <p className="max-w-[250px]">
-                    Hi! I'm MRINMOYEE AI. I've analyzed this material. What would you like to know? Try asking for a summary or study notes!
+                <div className="h-full flex flex-col items-center justify-center py-6 px-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mb-6">
+                    <Bot size={32} className="text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
+                    I've analyzed this material.
+                  </h3>
+                  <p className="text-slate-500 mb-8 max-w-sm text-sm">
+                    What would you like me to do with it? Select an action below or ask your own question.
                   </p>
+
+                  <div className="flex flex-col gap-3 w-full max-w-sm">
+                    {[
+                      { icon: '📝', label: 'Make Comprehensive Notes', prompt: 'Make comprehensive notes from this material.' },
+                      { icon: '📚', label: 'Create Study Guide', prompt: 'Create a structured study guide based on this material.' },
+                      { icon: '❓', label: 'Generate Questions', prompt: 'Generate 10 important questions and their answers from this material.' },
+                      { icon: '🎯', label: 'Find Important Topics', prompt: 'List the most frequently tested or important topics in this material.' },
+                      { icon: '🧠', label: 'Explain Difficult Topics', prompt: 'Explain the difficult or complex topics in this material simply.' }
+                    ].map((action, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => sendMessage({ role: 'user', content: action.prompt })}
+                        className="flex items-center gap-3 px-5 py-3.5 bg-white border border-slate-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-all shadow-sm group cursor-pointer"
+                      >
+                        <span className="text-xl">{action.icon}</span>
+                        <span className="font-semibold text-slate-700 group-hover:text-emerald-700 text-sm text-left">{action.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
               
