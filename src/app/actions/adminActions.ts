@@ -483,7 +483,20 @@ export async function invalidateAdminRoutineData() {
   if (redis) {
     try {
       await redis.del(`admin_routine_data`);
-      await redis.del(`student_routine_data`); // Also invalidate student cache if it exists
-    } catch (e) {}
+      await redis.del(`global_class_routines`);
+      
+      // Clear all student routine caches
+      let cursor = '0';
+      do {
+        const res = await redis.scan(cursor, { match: 'student_routine_v2_*', count: 1000 });
+        cursor = res[0];
+        const keys = res[1];
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } while (cursor !== '0');
+    } catch (e) {
+      console.error("Cache invalidation error:", e);
+    }
   }
 }
