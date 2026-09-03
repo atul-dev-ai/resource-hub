@@ -15,9 +15,14 @@ export async function POST(req: Request) {
     apiKey: process.env.OPENROUTER_API_KEY || '',
   });
 
-  // Inject the file data into the first user message if it's a new conversation
-  const enhancedMessages = [...messages];
-  const lastUserMessage = messages.length > 0 ? messages[messages.length - 1].content : "";
+  // Sanitize incoming messages to avoid AI SDK Zod validation errors from old/corrupt localStorage formats
+  const enhancedMessages = messages.map((msg: any) => ({
+    role: msg.role,
+    content: typeof msg.content === 'string' && msg.content 
+      ? msg.content 
+      : (msg.parts ? msg.parts.map((p: any) => p.text || '').join('') : '')
+  }));
+  const lastUserMessage = enhancedMessages.length > 0 ? enhancedMessages[enhancedMessages.length - 1].content : "";
   const isFirstMessage = messages.length > 0 && messages[messages.length - 1].role === 'user' && messages.length === 1;
 
   let documentText = '';
