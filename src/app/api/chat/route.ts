@@ -49,7 +49,9 @@ export async function POST(req: Request) {
           value: lastUserMessage,
         });
 
-        // 2. Query Upstash Vector
+        // Temporarily disable RAG query to avoid cross-document contamination
+        // until we fix the metadata filtering issue in Upstash.
+        /*
         const results = await index.query({
           vector: embedding,
           topK: 5,
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
           const chunks = results.map(r => r.metadata?.text).filter(Boolean);
           documentText = chunks.join('\n\n...\n\n');
         }
+        */
       } catch (e: any) {
         console.error("RAG Retrieval Error (falling back to direct parse):", e.message || e);
       }
