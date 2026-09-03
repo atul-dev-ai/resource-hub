@@ -27,9 +27,11 @@ export async function POST(req: Request) {
 
   let documentText = '';
   
-  if (fileUrls && fileUrls.length > 0 && fileType) {
+  if (fileUrls && fileUrls.length > 0) {
     const fileUrl = fileUrls[0]; // fallback for RAG filter and pdf parsing
-    if (fileType.toLowerCase().includes('pdf')) {
+    const isPdf = fileUrl.toLowerCase().includes('.pdf');
+    
+    if (isPdf) {
       // RAG Retrieval Logic
       try {
         const index = new Index({
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
       const newContent: any[] = [{ type: 'text', text: firstUserMsg.content as string }];
       
       for (const url of fileUrls) {
-         if (fileType.toLowerCase().includes('pdf')) {
+         if (url.toLowerCase().includes('.pdf')) {
             try {
                const response = await fetch(url);
                const arrayBuffer = await response.arrayBuffer();
