@@ -73,10 +73,13 @@ export async function POST(req: Request) {
       }
     }
     
-    if (isFirstMessage) {
-      // Attach all images or PDFs for vision/document models properly using multi-part content
-      const lastUserMsg = enhancedMessages[enhancedMessages.length - 1];
-      const newContent: any[] = [{ type: 'text', text: lastUserMsg.content as string }];
+    // Attach all images or PDFs for vision/document models properly using multi-part content
+    // We must do this on EVERY request because the frontend doesn't store the backend-injected file parts
+    const firstUserMsgIndex = enhancedMessages.findIndex((m: any) => m.role === 'user');
+    
+    if (firstUserMsgIndex !== -1) {
+      const firstUserMsg = enhancedMessages[firstUserMsgIndex];
+      const newContent: any[] = [{ type: 'text', text: firstUserMsg.content as string }];
       
       for (const url of fileUrls) {
          if (fileType.toLowerCase().includes('pdf')) {
@@ -97,20 +100,21 @@ export async function POST(req: Request) {
          }
       }
       
-      enhancedMessages[enhancedMessages.length - 1] = {
-        role: 'user',
+      enhancedMessages[firstUserMsgIndex] = {
+        ...firstUserMsg,
         content: newContent
       };
     }
   }
 
 let systemPromptContext = '';
-if (isFirstMessage && fileUrls && fileUrls.length > 0) {
+if (fileUrls && fileUrls.length > 0) {
   systemPromptContext = `The user has attached their study material. Please carefully analyze the attached document or images and use it to generate comprehensive notes or answer their questions directly. Extract and format any relevant information.`;
-} else if (documentText) {
-  systemPromptContext = `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.`;
+  if (documentText) {
+    systemPromptContext += `\n\nHere are some relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material as well.`;
+  }
 } else {
-  systemPromptContext = `The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.`;
+  systemPromptContext = `The user is asking a general question. Please use your general knowledge to answer them as best as you can.`;
 }
 
 const systemPrompt = `You are an intelligent study assistant for a university student.
