@@ -97,7 +97,7 @@ export default function StudentDashboard() {
                   activeAnnouncement.type === 'success' ? 'text-emerald-800' :
                   'text-blue-800'
                 }`}>
-                {activeAnnouncement.body}
+                {activeAnnouncement.content}
               </p>
               <p className={`text-xs mt-3 font-medium ${
                   activeAnnouncement.type === 'warning' ? 'text-orange-600/80' :
