@@ -71,28 +71,34 @@ export async function POST(req: Request) {
         console.error("RAG Retrieval Error:", e);
       }
     } else if (isFirstMessage) {
-      // It's an image, attach it for vision models
-      const mimeType = 'image/jpeg';
-      enhancedMessages[0] = {
-        ...enhancedMessages[0],
-        experimental_attachments: [
-          {
-            name: 'Study Material',
-            contentType: mimeType,
-            url: fileUrl,
-          }
+      // It's an image, attach it for vision models properly using multi-part content
+      const lastUserMsg = enhancedMessages[enhancedMessages.length - 1];
+      enhancedMessages[enhancedMessages.length - 1] = {
+        role: 'user',
+        content: [
+          { type: 'text', text: lastUserMsg.content as string },
+          { type: 'image', image: fileUrl } // Vercel AI SDK handles URLs for image parts
         ]
       };
     }
   }
 
-  const systemPrompt = `You are an intelligent study assistant for a university student.
+let systemPromptContext = '';
+if (documentText) {
+  systemPromptContext = `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.`;
+} else if (fileUrl && fileType && !fileType.toLowerCase().includes('pdf')) {
+  systemPromptContext = `The user has attached an image of their study material. Please carefully analyze the image and use it to answer their questions directly.`;
+} else {
+  systemPromptContext = `The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.`;
+}
+
+const systemPrompt = `You are an intelligent study assistant for a university student.
 Your goal is to help them understand their course materials.
 Always provide accurate, educational, and structured responses.
 Format your responses using Markdown.
-Never say you cannot read or access files or PDFs. The system will automatically extract and provide the relevant text from the user's files to you.
+Never say you cannot read or access files or PDFs. The system will automatically extract and provide the relevant text from the user's files to you (or pass the image directly).
 
-${documentText ? `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : 'The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.'}`;
+${systemPromptContext}`;
 
   try {
     const google = createGoogleGenerativeAI({
