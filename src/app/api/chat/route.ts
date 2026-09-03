@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
         // 1. Generate embedding for the user's question
         const { embedding } = await embed({
-          model: google.textEmbeddingModel('gemini-embedding-2'),
+          model: google.textEmbeddingModel('text-embedding-004'),
           value: lastUserMessage,
         });
 
@@ -61,17 +61,23 @@ export async function POST(req: Request) {
           // Found chunks in RAG database!
           const chunks = results.map(r => r.metadata?.text).filter(Boolean);
           documentText = chunks.join('\n\n...\n\n');
-        } else {
-          // Fallback: If not indexed yet (e.g. old file), parse the PDF on the fly
+        }
+      } catch (e) {
+        console.error("RAG Retrieval Error (falling back to direct parse):", e.message || e);
+      }
+      
+      // Fallback: If not indexed yet or RAG failed, parse the PDF on the fly
+      if (!documentText) {
+        try {
           const response = await fetch(fileUrl);
           const arrayBuffer = await response.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           const pdfParse = require('pdf-parse');
           const pdfData = await pdfParse(buffer);
           documentText = pdfData.text;
+        } catch (e) {
+          console.error("Direct PDF Parse Error:", e);
         }
-      } catch (e) {
-        console.error("RAG Retrieval Error:", e);
       }
     }
     

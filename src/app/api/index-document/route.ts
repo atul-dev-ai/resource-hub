@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     });
 
     const { embeddings } = await embedMany({
-      model: google.textEmbeddingModel('gemini-embedding-2'),
+      model: google.textEmbeddingModel('text-embedding-004'),
       values: chunks,
     });
 
