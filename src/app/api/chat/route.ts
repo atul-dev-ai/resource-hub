@@ -7,7 +7,7 @@ import { Index } from '@upstash/vector';
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { messages, fileUrl, fileType } = await req.json();
+  const { messages, fileUrls, fileType } = await req.json();
 
   // Create OpenRouter client
   const openrouter = createOpenAI({
@@ -27,7 +27,8 @@ export async function POST(req: Request) {
 
   let documentText = '';
   
-  if (fileUrl && fileType) {
+  if (fileUrls && fileUrls.length > 0 && fileType) {
+    const fileUrl = fileUrls[0]; // fallback for RAG filter and pdf parsing
     if (fileType.toLowerCase().includes('pdf')) {
       // RAG Retrieval Logic
       try {
@@ -71,13 +72,15 @@ export async function POST(req: Request) {
         console.error("RAG Retrieval Error:", e);
       }
     } else if (isFirstMessage) {
-      // It's an image, attach it for vision models properly using multi-part content
+      // It's an image, attach all images for vision models properly using multi-part content
       const lastUserMsg = enhancedMessages[enhancedMessages.length - 1];
+      const imageParts = fileUrls.map((url: string) => ({ type: 'image', image: url }));
+      
       enhancedMessages[enhancedMessages.length - 1] = {
         role: 'user',
         content: [
           { type: 'text', text: lastUserMsg.content as string },
-          { type: 'image', image: fileUrl } // Vercel AI SDK handles URLs for image parts
+          ...imageParts
         ]
       };
     }
@@ -86,8 +89,8 @@ export async function POST(req: Request) {
 let systemPromptContext = '';
 if (documentText) {
   systemPromptContext = `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.`;
-} else if (fileUrl && fileType && !fileType.toLowerCase().includes('pdf')) {
-  systemPromptContext = `The user has attached an image of their study material. Please carefully analyze the image and use it to answer their questions directly.`;
+} else if (fileUrls && fileUrls.length > 0 && fileType && !fileType.toLowerCase().includes('pdf')) {
+  systemPromptContext = `The user has attached images of their study material. Please carefully analyze the images and use them to answer their questions directly.`;
 } else {
   systemPromptContext = `The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.`;
 }

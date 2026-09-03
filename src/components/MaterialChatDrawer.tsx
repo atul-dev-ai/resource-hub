@@ -10,13 +10,13 @@ import remarkGfm from 'remark-gfm';
 interface MaterialChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  fileUrl: string;
+  fileUrls: string[];
   fileType: string;
 }
 
-export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType }: MaterialChatDrawerProps) {
+export default function MaterialChatDrawer({ isOpen, onClose, fileUrls, fileType }: MaterialChatDrawerProps) {
   // Load initial messages from localStorage
-  const chatKey = `chat-history-${fileUrl}`;
+  const chatKey = `chat-history-${fileUrls[0]}`;
   const [initialMessages] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(chatKey);
@@ -31,10 +31,19 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
 
   const { messages, sendMessage, status, error } = useChat({
     api: '/api/chat',
-    body: { fileUrl, fileType },
+    body: { fileUrls, fileType },
     initialMessages,
   } as any) as any;
   const [input, setInput] = useState('');
+  const hasSentInitial = useRef(false);
+
+  // Auto-trigger note generation on first open
+  useEffect(() => {
+    if (isOpen && messages.length === 0 && !hasSentInitial.current) {
+      hasSentInitial.current = true;
+      sendMessage({ role: 'user', content: 'Analyze these uploaded materials and make comprehensive notes.' });
+    }
+  }, [isOpen, messages.length, sendMessage]);
 
   // Save messages to localStorage whenever they change
   useEffect(() => {
@@ -115,9 +124,9 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
                   </div>
                   <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${
                     m.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-sm whitespace-pre-wrap' 
+                      ? 'bg-indigo-600 text-white rounded-tr-sm whitespace-pre-wrap hidden' // Hide the auto-generated user message if it's the first one, or maybe hide all for cleaner UI? Let's just hide the user message if it's the default prompt
                       : 'bg-slate-100 text-slate-800 rounded-tl-sm border border-slate-200 prose prose-sm prose-slate max-w-none'
-                  }`}>
+                  }`} style={m.role === 'user' && m.content === 'Analyze these uploaded materials and make comprehensive notes.' ? { display: 'none' } : {}}>
                     {m.role === 'user' ? (
                       m.content || (m.parts && m.parts.map((p: any, i: number) => p.type === 'text' ? p.text : '').join('')) || ''
                     ) : (
@@ -132,14 +141,13 @@ export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType 
               ))}
               
               {(status === 'submitted' || status === 'streaming') && messages[messages.length - 1]?.role === 'user' && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
-                    <Sparkles size={16} />
+                <div className="flex flex-col items-center justify-center py-10 text-center space-y-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-green-500/20 blur-xl rounded-full animate-pulse"></div>
+                    <Bot size={48} className="text-green-500 animate-bounce relative z-10" />
                   </div>
-                  <div className="bg-slate-900 rounded-2xl px-5 py-3 rounded-tl-sm flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-500/30 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-purple-500/10 animate-pulse"></div>
-                    <Sparkles size={20} className="text-purple-300 animate-pulse drop-shadow-[0_0_8px_rgba(168,85,247,0.9)] relative z-10" />
-                  </div>
+                  <h3 className="text-lg font-bold text-slate-800">Processing Materials...</h3>
+                  <p className="text-slate-500 text-sm">Please wait while I analyze the content and generate your notes.</p>
                 </div>
               )}
               {error && (

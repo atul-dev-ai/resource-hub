@@ -5,11 +5,11 @@ import { Bot, Sparkles } from "lucide-react";
 import MaterialChatDrawer from "./MaterialChatDrawer";
 
 interface ResourceAIAssistantProps {
-  fileUrl: string;
+  fileUrls: string[];
   fileType: string;
 }
 
-export default function ResourceAIAssistant({ fileUrl, fileType }: ResourceAIAssistantProps) {
+export default function ResourceAIAssistant({ fileUrls, fileType }: ResourceAIAssistantProps) {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
@@ -27,7 +27,7 @@ export default function ResourceAIAssistant({ fileUrl, fileType }: ResourceAIAss
       <MaterialChatDrawer
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
-        fileUrl={fileUrl}
+        fileUrls={fileUrls}
         fileType={fileType}
       />
     </>

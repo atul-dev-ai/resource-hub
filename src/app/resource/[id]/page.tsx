@@ -113,7 +113,7 @@ export default async function ResourceDetailsPage({ params }: { params: Promise<
               <h3 className="font-black text-white mb-4 tracking-wide">Actions</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <ResourceAIAssistant fileUrl={fileUrl} fileType={resource.resource_type || ''} />
+                  <ResourceAIAssistant fileUrls={fileUrls} fileType={resource.resource_type || ''} />
                 </div>
                 {fileUrls.map((url: string, index: number) => (
                   <DownloadButton 
