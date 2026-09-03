@@ -101,7 +101,7 @@ ${documentText ? `Here are relevant excerpts from the user's study material:\n\n
       messages: enhancedMessages,
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error: any) {
     console.error("Chat API Error:", error);
     return new Response(
