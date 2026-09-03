@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { embedMany } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { Index } from '@upstash/vector';
+import pdfParse from 'pdf-parse';
 
 export const maxDuration = 60; // Allow more time for large PDFs
 
@@ -51,8 +52,7 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(arrayBuffer);
 
     // 2. Parse the PDF
-    const parser = require('pdf-parse');
-    const pdfData = await parser(buffer);
+    const pdfData = await pdfParse(buffer);
     const documentText = pdfData.text;
 
     if (!documentText || documentText.trim().length === 0) {

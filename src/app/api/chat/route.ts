@@ -2,6 +2,7 @@ import { streamText, embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { Index } from '@upstash/vector';
+import pdfParse from 'pdf-parse';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -75,7 +76,6 @@ export async function POST(req: Request) {
           const response = await fetch(fileUrl);
           const arrayBuffer = await response.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
-          const pdfParse = require('pdf-parse');
           const pdfData = await pdfParse(buffer);
           documentText = pdfData.text;
         } catch (e: any) {
