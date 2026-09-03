@@ -53,7 +53,7 @@ export async function POST(req: Request) {
           // Found chunks in RAG database!
           const chunks = results.map(r => r.metadata?.text).filter(Boolean);
           documentText = chunks.join('\n\n...\n\n');
-        } else if (isFirstMessage) {
+        } else {
           // Fallback: If not indexed yet (e.g. old file), parse the PDF on the fly
           const response = await fetch(fileUrl);
           const arrayBuffer = await response.arrayBuffer();
@@ -85,7 +85,9 @@ export async function POST(req: Request) {
 Your goal is to help them understand their course materials.
 Always provide accurate, educational, and structured responses.
 Format your responses using Markdown.
-${documentText ? `\nHere are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : ''}`;
+Never say you cannot read or access files or PDFs. The system will automatically extract and provide the relevant text from the user's files to you.
+
+${documentText ? `Here are relevant excerpts from the user's study material:\n\n${documentText.substring(0, 15000)}\n\nPlease reference this material to answer their questions.` : 'The user is asking a general question or the document text is still being processed. Please use your general knowledge to answer them as best as you can.'}`;
 
   try {
     const google = createGoogleGenerativeAI({

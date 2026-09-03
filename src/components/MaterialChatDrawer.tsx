@@ -15,15 +15,33 @@ interface MaterialChatDrawerProps {
 }
 
 export default function MaterialChatDrawer({ isOpen, onClose, fileUrl, fileType }: MaterialChatDrawerProps) {
+  // Load initial messages from localStorage
+  const chatKey = `chat-history-${fileUrl}`;
+  const [initialMessages] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(chatKey);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {}
+      }
+    }
+    return [];
+  });
+
   const { messages, sendMessage, status, error } = useChat({
     api: '/api/chat',
     body: { fileUrl, fileType },
+    initialMessages,
   } as any) as any;
   const [input, setInput] = useState('');
 
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    console.log("Current messages:", messages);
-  }, [messages]);
+    if (messages.length > 0) {
+      localStorage.setItem(chatKey, JSON.stringify(messages));
+    }
+  }, [messages, chatKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
