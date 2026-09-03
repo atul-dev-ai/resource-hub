@@ -427,7 +427,7 @@ export default function RoutineClient() {
                               {course?.course_code || 'Unknown'}
                             </span>
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 bg-white/50 px-2 py-1 rounded-lg">
-                               <Hash size={12} /> {routine.department} ({routine.batch}-{routine.section})
+                               <Hash size={12} /> {routine.department} ({routine.semester}, {routine.batch}-{routine.section})
                             </div>
                           </div>
                           
