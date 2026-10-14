@@ -66,6 +66,8 @@ export default function AcademicStructurePage() {
   const refreshData = async () => {
     await invalidateAcademicStructure();
     queryClient.invalidateQueries({ queryKey: ["admin_academic_structure"] });
+    // Also invalidate the Routine page's cache so new courses appear immediately
+    queryClient.invalidateQueries({ queryKey: ["admin_routine_data"] });
   };
 
   // Cancel Handlers
