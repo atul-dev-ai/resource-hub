@@ -383,7 +383,10 @@ export async function invalidateAcademicStructure() {
   const redis = getRedis();
   if (redis) {
     try {
+      // Clear departments/courses structure cache
       await redis.del(`admin_academic_structure`);
+      // Also clear routine data cache since it depends on courses list
+      await redis.del(`admin_routine_data`);
     } catch (e) {}
   }
 }
